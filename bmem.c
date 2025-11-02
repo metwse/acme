@@ -4,7 +4,14 @@
 #include <stdlib.h>
 
 
-void b_buffer_init(struct b_buffer *buf, b_umem cap) {
+void b_buffer_init(struct b_buffer *buf)
+{
+	buf->cap = 0;
+	buf->b = NULL;
+}
+
+void b_buffer_with_cap(struct b_buffer *buf, b_umem cap)
+{
 	buf->cap = cap;
 
 	if (cap) {
@@ -16,8 +23,9 @@ void b_buffer_init(struct b_buffer *buf, b_umem cap) {
 	}
 }
 
-/* sets buffer capacity to 0 */
-void b_buffer_reset(struct b_buffer *buf) {
+/* set buffer capacity to 0 */
+void b_buffer_reset(struct b_buffer *buf)
+{
 	if (buf->cap) {
 		free(buf->b);
 
@@ -26,7 +34,8 @@ void b_buffer_reset(struct b_buffer *buf) {
 	}
 }
 
-void b_buffer_resize(struct b_buffer *buf, b_umem cap) {
+void b_buffer_resize(struct b_buffer *buf, b_umem cap)
+{
 	if (cap == 0)
 		return b_buffer_reset(buf);
 

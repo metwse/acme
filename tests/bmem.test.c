@@ -11,7 +11,7 @@ int main()
 	struct b_buffer buf;
 
 	for (int i = 0; i < 256; i++) {
-		b_buffer_init(&buf, i);
+		b_buffer_with_cap(&buf, i);
 
 		b_buffer_setall(buf, i);
 
@@ -33,7 +33,7 @@ int main()
 		int size = rand() % 128;
 		int new_size = rand() % 128;
 
-		b_buffer_init(&buf, size);
+		b_buffer_with_cap(&buf, size);
 		b_buffer_resize(&buf, new_size);
 
 		b_buffer_reset(&buf);

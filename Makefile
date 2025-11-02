@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O2 -Wall -Wextra -Werror
+CFLAGS=-O2 -Wall -Wextra
 RM=rm -rf
 
 # test flags
@@ -32,14 +32,13 @@ $(BIN_DIR)/%.test: $(OBJS) tests/%.test.o | $(BIN_DIR)
 
 clean:
 	$(RM) $(wildcard b*.o) \
-		$(wildcard tests/b*.o) \
 		$(BIN_DIR)
 
 .PHONY: clean
 
 $(foreach target,$(target),$(shell $(CC) -MM b*.c))
 
-$(foreach test_target,tests/$(test_target),$(shell $(CC) -MM tests/b*.c))
+$(foreach test_target,$(test_target),$(shell $(CC) -MM tests/b*.c))
 
 $(BIN_DIR):
 	mkdir $@
