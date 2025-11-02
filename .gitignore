@@ -1,4 +1,4 @@
 *.o
-bs
 compile_commands.json
-.cache
+.cache/
+bin/
