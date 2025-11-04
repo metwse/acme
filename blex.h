@@ -22,7 +22,7 @@ static const char *const b_tokens[] = {
 	"0", "1",
 
 	/* 1-character tokens */
-	"+", "*", "'", ",", "=",
+	"+", "*", "'", ",", "=", ".",
 	"(", ")", "<", ">", "[", "]", "{", "}",
 
 	";" /* <no-escape-enter is also a delim> */,
@@ -38,7 +38,7 @@ enum b_token_type {
 
 	TK_FALSE, TK_TRUE,
 
-	TK_OR, TK_AND, TK_INVOLUTION, TK_DELIM, TK_ASGN,
+	TK_OR, TK_AND, TK_INVOLUTION, TK_DELIM, TK_ASGN, TK_SUBSCRIPT,
 	TK_L_PAREN, TK_R_PAREN,
 	TK_L_ANGLE_BRACKET, TK_R_ANGLE_BRACKET,
 	TK_L_BRACKET, TK_R_BRACKET,
