@@ -14,7 +14,7 @@
 #include <stdbool.h>
 
 
-/* DO NOT CHANGE ORDER */
+/* DO NOT CHANGE THE ORDER */
 static const char *const b_tokens[] = {
 	"<>" /* no more token */,
 
@@ -25,12 +25,14 @@ static const char *const b_tokens[] = {
 	"+", "*", "'", ",", "=", ".",
 	"(", ")", "<", ">", "[", "]", "{", "}",
 
-	";" /* <no-escape-enter is also a delim> */,
+	"\\", "\n", ";",
+
+	/* keywords and reserved words */
 	"bool", "vec",
 
 
 	/* non-terminal tokens */
-	"<positive-integer>", "<ident>",
+	"<positive-int>", "<ident>",
 };
 
 enum b_token_type {
@@ -44,7 +46,7 @@ enum b_token_type {
 	TK_L_BRACKET, TK_R_BRACKET,
 	TK_L_CURLY, TK_R_CURLY,
 
-	TK_STMT_DELIM,
+	TK_ESCAPE, TK_NEWLINE, TK_STMT_DELIM,
 
 	TK_TY_BOOL, TK_TY_VEC,
 
@@ -55,6 +57,10 @@ enum b_token_type {
 
 #define b_notok ((struct b_token) { .token = NOTOKEN })
 
+#define BLEX_MAX_IDENT_LEN 32
+
+#define BLEX_MAX_POSITIVE_INT_LEN 10
+
 
 /**
  * @brief Associated data with token.
@@ -62,13 +68,21 @@ enum b_token_type {
  * Extra information for a token.
  */
 union b_seminfo {
-	b_umem positive_integer;
-	char *identifier;
+	b_umem positive_int;
+	char *ident;
 };
 
 struct b_token {
 	union b_seminfo info;
 	enum b_token_type token;
+};
+
+/* lexer result */
+enum b_lex_result {
+	BLEXOK = 0,
+	BLEXE_IDENT_TOO_LONG, /* identifier longer than BLEX_MAX_IDENT_LEN */
+	BLEXE_INTEGER_TOO_LARGE, /* integer string longer than BLEX_MAX_POSITIVE_INT_LEN */
+	BLEXE_NO_MATCH, /* could not match token */
 };
 
 /**
@@ -77,9 +91,9 @@ struct b_token {
  * State of the lexeme scanner.
  */
 struct b_lex {
-	// input stream
-	struct bio *bio;
-	char hold_char;
+	struct bio *bio; /* input stream */
+	char peek;
+	enum b_token_type lookahead;
 };
 
 
@@ -92,7 +106,7 @@ void *b_lex_clearinput(struct b_lex *);
 void *b_lex_setinput(struct b_lex *, struct bio *);
 
 /* first matched token */
-struct b_token b_lex_next(struct b_lex *);
+enum b_lex_result b_lex_next(struct b_lex *, struct b_token *);
 
 
 #endif

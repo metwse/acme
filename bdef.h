@@ -11,6 +11,7 @@
 #include <stddef.h>
 
 
+#define b_max(a, b) ((a) > (b) ? (a) : (b))
 #define b_numbits(t) (sizeof(t) * CHAR_BIT)
 
 /**
