@@ -1,164 +1,54 @@
 /**
  * @file bparser.h
- * @brief Parser
+ * @brief Boolean script parser
  *
- * Parse tree.
+ * Parsed node definitions and syntax-directed translators
  */
 
 #ifndef BPARSER_H
 #define BPARSER_H
 
+
 #include "bdef.h"
+#include "blex.h"
 
-#include <stdbool.h>
 
-
-/* SYMBOLS
- * ======================================================================
- */
-
-/* -- general -- */
-
-/** 1 or 0 */
-enum bbit {
-	BBIT_TRUE,
-	BBIT_FALSE,
-};
-
-/** identifier */
-struct bident {
-	const char *ident /** identifier name */;
-	b_umem index /** index for vectors */;
-};
-
-/** type */
-struct bty {
+/** @brief parse tree node */
+struct b_pt_node {
 	enum {
-		BTY_BOOL,
-		BTY_VEC,
-	} type /** optional variable type, default to bool */;
-	b_umem size /** size of vector */;
-};
+		BP_BIT,
+		BP_POSITIVE_INT,
 
-/* -- expressions -- */
+		BP_IDENT, BP_IDENT_OR_MEMBER,
 
-/** unit of a expression (atomic) */
-struct batom {
-	enum {
-		BATOM_EXPR,
-		BATOM_INITLIST,
-		BATOM_ASGNS,
-		BATOM_CALL,
-		BATOM_IDENT,
-		BATOM_BIT,
-	} kind /** kind of the atomic */;
-	union {
-		struct bexpr *expr /** @see bexpr */;
-		struct binitlist *initlist /** @see binitlist */;
-		struct basgns *asgns /** @see basgns */;
-		struct bcall *call /** @see bcall */;
-		struct bident *ident /** @see bident */;
-		enum bbit bit;
-	};
-};
+		BP_TY,
 
-/**
- * factor, for precedence of INVOLUTION
- */
-struct bfactor {
-	enum {
-		BFACTOR,
-		BFACTOR_INVERSE,
-	} kind /** whether or not to take inverse of atom */;
-	struct batom atom /** @see batom */;
-};
 
-/**
- * term, for precedence of AND
- * Evaluates term AND factor if term is not NULL.
- */
-struct bterm {
-	struct bterm *term /** not NULL in AND */;
-	struct bfactor factor /** @see bfactor */;
-};
+		BP_EXPR, BP_EXPR_REST,
+		BP_TERM, BP_FACTOR_REST,
+		BP_ATOM,
 
-/**
- * expression
- * Evaluates expr OR term if expr is not NULL.
- */
-struct bexpr {
-	struct bexpr *expr /** not NULL in OR */;
-	struct bterm term /** @see bterm */;
-};
+		BP_CALL,
+		BP_OPTPARAMS,
 
-/** vector initializer list */
-struct binitlist {
-	struct expr *exprs /** list of expressions */;
-	b_umem size /** size of that list */;
-};
 
-/**
- * right-recursive assignment list
- *
- * `tuple_size` greater than "1" iff the expression is `bcall` and returns
- * a tuple.
- */
-struct basgns {
-	struct bident **idents /** list of tuple of identifiers */;
-	b_umem size /** size of that list*/;
-	b_umem tuple_size /** size of that tuple */;
+		BP_STMT,
+		BP_STMTS,
 
-	struct bexpr expr /** @see bexpr */;
-};
+		BP_DECL,
+		BP_DECL_OPTASGNS,
 
-/** expression call */
-struct bcall {
-	const char *ident /** expression identifier */;
-	struct expr *params /** optional list of params */;
-	b_umem size /** size of that list*/;
-};
 
-/* -- statements -- */
+		BP_ASGNS, BP_ASGNS_REST,
 
-/** variable declaration statement */
-struct bdecl {
-	struct bty type /** type of the variable(s) */;
+		BP_IDENT_LS, BP_IDENT_LS_REST,
+		BP_IDENT_OR_MEMBER_LS, BP_IDENT_OR_MEMBER_LS_REST,
 
-	const char **ident /** tuple of identifiers */;
-	b_umem tuple_size /** size of that tuple */;
-
-	struct basgns *optasgns /** optional assignments */;
-};
-
-/** block statement */
-struct bstmts {
-	struct bstmt *stmts /** list of statements */;
-	b_umem stmt_count /** size of that list */;
-};
-
-/** statement */
-struct bstmt {
-	enum {
-		BSTMT_DECL,
-		BSTMT_ASGNS,
-		BSTMT_EXPR,
-		BSTMT_BLOCK,
-	} kind /** kind of the statement */;
-	union {
-		struct bdecl decl /** @see bdecl */;
-		struct basgns asgns /** @see basgns */;
-		struct bexpr bexpr /** @see bexpr */;
-		struct bstmts stmts /** @see bstmts */;
-	};
-};
-
-/* ======================================================================
- * END SYMBOLS
- */
-
-/** @brief a Boolean script program */
-struct b_prog {
-	struct bstmts statements /** the parser tree */;
+		BP_EXPR_LS, BP_EXPR_LS_REST,
+	} kind /** node kind */;
+	union b_seminfo seminfo /** additional semantic info */;
+	struct b_pt_node *nodes /** child nodes */;
+	b_umem node_count /** child node count */;
 };
 
 
