@@ -10,6 +10,8 @@
 
 #include "bdef.h"
 
+#include <stdbool.h>
+
 
 /* SYMBOLS
  * ======================================================================
@@ -35,7 +37,7 @@ struct bty {
 		BTY_BOOL,
 		BTY_VEC,
 	} type /** optional variable type, default to bool */;
-	b_umem size /** for vectors */;
+	b_umem size /** size of vector */;
 };
 
 /* -- expressions -- */
@@ -57,10 +59,12 @@ struct batom {
 		struct bcall *call /** @see bcall */;
 		struct bident *ident /** @see bident */;
 		enum bbit bit;
-	} atom /** underlying atomic */;
+	};
 };
 
-/** factor, for precedence of INVOLUTION */
+/**
+ * factor, for precedence of INVOLUTION
+ */
 struct bfactor {
 	enum {
 		BFACTOR,
@@ -69,23 +73,21 @@ struct bfactor {
 	struct batom atom /** @see batom */;
 };
 
-/** term, for precedence of AND */
+/**
+ * term, for precedence of AND
+ * Evaluates term AND factor if term is not NULL.
+ */
 struct bterm {
-	enum {
-		BTERM_FACTOR,
-		BTERM_AND,
-	} kind /** a factor or a factor AND'ed with a term */;
-	struct bterm *term /** available in AND form */;
+	struct bterm *term /** not NULL in AND */;
 	struct bfactor factor /** @see bfactor */;
 };
 
-/** expression */
+/**
+ * expression
+ * Evaluates expr OR term if expr is not NULL.
+ */
 struct bexpr {
-	enum {
-		BEXPR_TERM,
-		BEXPR_OR,
-	} kind /** a term or a term OR'ed with a expr */;
-	struct bexpr *expr /** available in OR form */;
+	struct bexpr *expr /** not NULL in OR */;
 	struct bterm term /** @see bterm */;
 };
 
@@ -105,7 +107,8 @@ struct basgns {
 	struct bident **idents /** list of tuple of identifiers */;
 	b_umem size /** size of that list*/;
 	b_umem tuple_size /** size of that tuple */;
-	struct bexpr expr /** related expression */;
+
+	struct bexpr expr /** @see bexpr */;
 };
 
 /** expression call */
@@ -119,8 +122,12 @@ struct bcall {
 
 /** variable declaration statement */
 struct bdecl {
-	struct bty type /** type of the variable */;
-	const char *ident /** variable name */;
+	struct bty type /** type of the variable(s) */;
+
+	const char **ident /** tuple of identifiers */;
+	b_umem tuple_size /** size of that tuple */;
+
+	struct basgns *optasgns /** optional assignments */;
 };
 
 /** block statement */
