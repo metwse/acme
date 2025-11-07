@@ -14,7 +14,7 @@
 #define EOC { { .end = IEOC } } /* end of construct */
 
 // maximum number of variants constructing the same nonterminal
-#define MAX_VARIANT_COUNT 6
+#define MAX_VARIANT_COUNT 7
 // maximum body length of a rule
 #define MAX_BODY_LENGTH 4
 
@@ -28,18 +28,18 @@ struct production {
 	};
 };
 
+/** right-recursive list rules */
+#define RR(head, listelem, delim) \
+	{ { NT(listelem), NT(head ## _REST), EOB }, EOC }, \
+	{ { TK(delim), NT(head), NT(head ## _REST), EOB }, { EOB }, EOC }
+
+
 
 static const struct production
 productions[BNONTERMINAL_COUNT][MAX_VARIANT_COUNT][MAX_BODY_LENGTH + 1 /* +1 for EOB */] = {
-	/* BIT */ {
-		{ TK(TRUE), EOB },
-		{ TK(FALSE), EOB },
-		EOC
-	},
-	/* POSITIVE_INT */ {
-		{ TK(POSITIVE_INT), EOB },
-		EOC
-	},
+	/* BIT */ { { TK(TRUE), EOB }, { TK(FALSE), EOB }, EOC },
+	/* POSITIVE_INT */ { { TK(POSITIVE_INT), EOB }, EOC },
+
 	/* IDENT */ {
 		{ TK(IDENT), EOB },
 		EOC
@@ -49,44 +49,37 @@ productions[BNONTERMINAL_COUNT][MAX_VARIANT_COUNT][MAX_BODY_LENGTH + 1 /* +1 for
 		{ NT(IDENT), TK(SUBSCRIPT), NT(POSITIVE_INT), EOB },
 		EOC
 	},
-	/* TY */ {
+
+	/* TY */ { { NT(TY_BOOL), EOB }, { NT(TY_VEC), EOB }, EOC },
+	/* TY_BOOL */ {
 		{ TK(TY_BOOL), EOB },
+		{ EOB },
+		EOC
+	},
+	/* TY_VEC */ {
 		{ TK(TY_VEC), TK(L_ANGLE_BRACKET), NT(POSITIVE_INT), TK(R_ANGLE_BRACKET), EOB },
 		EOC
 	},
 
-	/* EXPR_OR_LIST_EXPR */ {
-		{ TK(L_BRACKET), NT(EXPR_LS), TK(R_BRACKET), EOB },
+	/* EXPR_OR_INITLIST */ {
+		{ NT(INITLIST), EOB },
 		{ NT(EXPR), EOB },
 		EOC
 	},
-	/* EXPR */ {
-		{ NT(TERM), NT(EXPR_REST), EOB },
-		EOC
-	},
-	/* EXPR_REST */ {
-		{ TK(OR), NT(EXPR), NT(EXPR_REST), EOB },
-		{ EOB },
+	/* EXPR */ RR(EXPR, TERM, OR),
+	/* INITLIST */ {
+		{ TK(L_BRACKET), NT(EXPR_LS), TK(R_BRACKET), EOB },
 		EOC
 	},
 
-	/* TERM */ {
-		{ NT(FACTOR), NT(TERM_REST), EOB },
-		EOC
-	},
-	/* TERM_REST */ {
-		{ TK(AND), NT(TERM), NT(TERM_REST), EOB },
-		{ EOB },
-		EOC
-	},
-
+	/* TERM */ RR(TERM, FACTOR, AND),
 	/* FACTOR */ {
 		{ NT(ATOM), NT(OPTINVOLUTION), EOB },
 		EOC
 	},
 	/* ATOM */ {
 		{ TK(L_PAREN), NT(EXPR), TK(R_PAREN), EOB },
-		{ TK(L_PAREN), NT(ASGN), TK(R_PAREN), EOB },
+		{ TK(L_PAREN), NT(ASGN_BOOL), TK(R_PAREN), EOB },
 		{ NT(CALL), EOB },
 		{ NT(IDENT_OR_MEMBER), EOB },
 		{ NT(BIT), EOB },
@@ -101,16 +94,19 @@ productions[BNONTERMINAL_COUNT][MAX_VARIANT_COUNT][MAX_BODY_LENGTH + 1 /* +1 for
 		{ NT(IDENT), TK(L_PAREN), NT(OPTPARAMS), TK(R_PAREN), EOB },
 		EOC
 	},
+	/* PARAMS */ RR(PARAMS, EXPR_OR_INITLIST, DELIM),
 	/* OPTPARAMS */ {
-		{ NT(EXPR_LS), EOB },
+		{ NT(PARAMS), EOB },
 		{ EOB },
 		EOC
 	},
 
 	/* STMT */ {
-		{ NT(DECL), TK(STMT_DELIM), EOB },
-		{ NT(ASGN), TK(STMT_DELIM), EOB },
-		{ NT(EXPR), TK(STMT_DELIM), EOB },
+		{ NT(DECL_BOOL), TK(STMT_DELIM), EOB },
+		{ NT(DECL_VEC), TK(STMT_DELIM), EOB },
+		{ NT(ASGN_BOOL), TK(STMT_DELIM), EOB },
+		{ NT(ASGN_VEC), TK(STMT_DELIM), EOB },
+		{ NT(CALL), TK(STMT_DELIM), EOB },
 		{ TK(L_CURLY), NT(STMTS), TK(R_CURLY), EOB },
 		EOC
 	},
@@ -120,20 +116,30 @@ productions[BNONTERMINAL_COUNT][MAX_VARIANT_COUNT][MAX_BODY_LENGTH + 1 /* +1 for
 		EOC
 	},
 
-	/* DECL */ {
-		{ NT(TY), NT(IDENT_LS), NT(DECL_OPTASGN), EOB },
-		{ NT(IDENT_LS), NT(DECL_OPTASGN), EOB },
+	/* DECL_BOOL */ {
+		{ NT(TY_BOOL), NT(IDENT_LS), NT(DECL_BOOL_OPTASGN), EOB },
 		EOC
 	},
-	/* DECL_OPTASGN */ {
-		{ TK(ASGN), NT(ASGN), EOB },
+	/* DECL_BOOL_OPTASGN */ {
+		{ TK(ASGN), NT(ASGN_BOOL), EOB },
 		{ TK(ASGN), NT(EXPR), EOB },
 		{ EOB },
 		EOC
 	},
+	/* DECL_VEC */ {
+		{ NT(TY_VEC), NT(IDENT_LS), NT(DECL_VEC_OPTASGN), EOB },
+		EOC
+	},
+	/* DECL_VEC_OPTASGN */ {
+		{ TK(ASGN), NT(ASGN_VEC), EOB },
+		{ TK(ASGN), NT(INITLIST), EOB },
+		{ EOB },
+		EOC
+	},
 
+	// TODO: deduplicate asgn rule definitions
 	/* ASGN */ {
-		{ NT(IDENT_OR_MEMBER_LS), NT(ASGN_REST), TK(ASGN), NT(EXPR_OR_LIST_EXPR_LS), EOB },
+		{ NT(IDENT_OR_MEMBER_LS), NT(ASGN_BOOL_REST), TK(ASGN), NT(EXPR_OR_INITLIST), EOB },
 		EOC
 	},
 	/* ASGN_REST */ {
@@ -141,45 +147,30 @@ productions[BNONTERMINAL_COUNT][MAX_VARIANT_COUNT][MAX_BODY_LENGTH + 1 /* +1 for
 		{ EOB },
 		EOC
 	},
-
-	/* IDENT_LS */ {
-		{ NT(IDENT), NT(IDENT_LS_REST), EOB },
+	/* ASGN_BOOL */ {
+		{ NT(IDENT_OR_MEMBER_LS), NT(ASGN_BOOL_REST), TK(ASGN), NT(EXPR), EOB },
 		EOC
 	},
-	/* IDENT_LS_REST */ {
-		{ TK(DELIM), NT(IDENT), NT(IDENT_LS_REST), EOB },
+	/* ASGN_BOOL_REST */ {
+		{ TK(ASGN), NT(IDENT_OR_MEMBER_LS), NT(ASGN_BOOL_REST), EOB },
+		{ EOB },
+		EOC
+	},
+	/* ASGN_VEC */ {
+		{ NT(IDENT_OR_MEMBER_LS), NT(ASGN_VEC_REST), TK(ASGN), NT(INITLIST_LS), EOB },
+		EOC
+	},
+	/* ASGN_VEC_REST */ {
+		{ TK(ASGN), NT(IDENT_OR_MEMBER_LS), NT(ASGN_VEC_REST), EOB },
 		{ EOB },
 		EOC
 	},
 
-	/* IDENT_OR_MEMBER_LS */ {
-		{ NT(IDENT_OR_MEMBER), NT(IDENT_OR_MEMBER_LS_REST), EOB },
-		EOC
-	},
-	/* IDENT_OR_MEMBER_LS_REST */ {
-		{ TK(DELIM), NT(IDENT_OR_MEMBER), NT(IDENT_OR_MEMBER_LS_REST), EOB },
-		{ EOB },
-		EOC
-	},
+	/* IDENT_LS */ RR(IDENT_LS, IDENT, DELIM),
+	/* IDENT_OR_MEMBER_LS_LS */ RR(IDENT_OR_MEMBER_LS, IDENT, DELIM),
 
-	/* EXPR_LS */ {
-		{ NT(EXPR), NT(EXPR_LS_REST), EOB },
-		EOC
-	},
-	/* EXPR_LS_REST */ {
-		{ TK(DELIM), NT(EXPR), NT(EXPR_LS_REST), EOB },
-		{ EOB },
-		EOC
-	},
-	/* EXPR_OR_LIST_EXPR_LS */ {
-		{ NT(EXPR_OR_LIST_EXPR), NT(EXPR_OR_LIST_EXPR_LS_REST), EOB },
-		EOC
-	},
-	/* EXPR_OR_LIST_EXPR_LS_REST */ {
-		{ TK(DELIM), NT(EXPR_OR_LIST_EXPR), NT(EXPR_OR_LIST_EXPR_LS_REST), EOB },
-		{ EOB },
-		EOC
-	},
+	/* EXPR_LS */ RR(EXPR_LS, EXPR, DELIM),
+	/* INITLIST_LS */ RR(INITLIST_LS, INITLIST, DELIM),
 };
 
 /* no lock/once used lazy initialization for widest compability */

@@ -33,13 +33,12 @@ void print_rule(const struct production rule[MAX_BODY_LENGTH])
 
 		if (rule[i].ty == BSYMBOL_TOKEN) {
 			const char *tk = btokens[rule[i].tk_ty];
-			int tk_len = strlen(tk);
 
-			if (tk_len && tk[0] == '@') {
+			if (strlen(tk) && tk[0] == '@') {
 				printf("%s", tk + 1);
 			} else {
 				putchar('"');
-				print_tolower(tk);
+				printf("%s", tk);
 				putchar('"');
 			}
 		} else {
@@ -73,9 +72,9 @@ int main()
 			print_rule(productions[head][rule]);
 		}
 
+		printf("\n");
 		if (head != BNONTERMINAL_COUNT - 1)
 			putchar('\n');
-		putchar('\n');
 	}
 
 	return 0;

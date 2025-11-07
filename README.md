@@ -17,6 +17,12 @@ Contributions are welcome! Please check our
 [Code of Conduct](http://github.com/metwse/code-of-conduct) before submitting
 pull requests.
 
+
+## BS Utilitiy
+Miscellaneous tools for interacting for Boolean script are provided in
+[utils](utils/README.md).
+
+
 ## Future Plans
 HDL-like features:
 ```

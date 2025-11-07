@@ -48,31 +48,37 @@
 	/* identifiers */ \
 	x(IDENT), x(IDENT_OR_MEMBER), \
 	\
-	x(TY), \
+	x(TY), x(TY_BOOL), x(TY_VEC), \
 	\
 	/* right-recursive expressions */\
-	x(EXPR_OR_LIST_EXPR), \
-	x(EXPR), x(EXPR_REST), \
-	x(TERM), x(TERM_REST), \
+	x(EXPR_OR_INITLIST), \
+	BNT_RR(EXPR), x(INITLIST), \
+	BNT_RR(TERM), \
 	x(FACTOR), x(ATOM), x(OPTINVOLUTION), \
-	/* funciton calls */\
-	x(CALL), x(OPTPARAMS), \
+	/* funciton calls */ \
+	x(CALL), BNT_RR(PARAMS), x(OPTPARAMS), \
 	\
-	/* statements */\
-	x(STMT), x(STMTS),\
-	x(DECL), x(DECL_OPTASGN), \
+	/* statements */ \
+	x(STMT), x(STMTS), \
+	x(DECL_BOOL), x(DECL_BOOL_OPTASGN), \
+	x(DECL_VEC), x(DECL_VEC_OPTASGN), \
 	\
 	/* right-recursive list types */\
-	x(ASGN), x(ASGN_REST), \
+	BNT_RR(ASGN), \
+	BNT_RR(ASGN_BOOL), \
+	BNT_RR(ASGN_VEC), \
 	\
-	x(IDENT_LS), x(IDENT_LS_REST), \
-	x(IDENT_OR_MEMBER_LS), x(IDENT_OR_MEMBER_LS_REST), \
+	BNT_RR(IDENT_LS), \
+	BNT_RR(IDENT_OR_MEMBER_LS), \
 	\
-	x(EXPR_LS), x(EXPR_LS_REST), \
-	x(EXPR_OR_LIST_EXPR_LS), x(EXPR_OR_LIST_EXPR_LS_REST)
+	BNT_RR(EXPR_LS), \
+	BNT_RR(INITLIST_LS)
 
 /** number of nonterminal types */
-#define BNONTERMINAL_COUNT 29
+#define BNONTERMINAL_COUNT 40
+
+/** right-recursive nonterminal definition */
+#define BNT_RR(nt) x(nt), x(nt ## _REST)
 
 
 static const char *const btokens[BTOKEN_COUNT] = {
