@@ -1,7 +1,7 @@
 # Boolean Script
-Embriyonic boolean algebra evaluation virtual machine
+Embryonic Boolean algebra interpreter.
 
-See [grammar.md](grammar.md) for language definition.
+See BNF in [utils](utils/README.md) for language definition.
 
 ```
 expr half_adder(a, b) -> (sum, carry) {
@@ -17,14 +17,55 @@ Contributions are welcome! Please check our
 [Code of Conduct](http://github.com/metwse/code-of-conduct) before submitting
 pull requests.
 
+## Building
+You can build Boolean Script and its utilities using GNUMake.
+```bash
+make               # Build the main 'bs' binary
+make bin/bnf       # Build a specific utility
+make tests         # Build all test binaries
+make bin/bio.test  # Build a specific test binary
+```
+
+### Build Variants
+- Default (optimized): \
+  Uses `-O2` and all warnings enabled.
+- Debug build: \
+  Includes symbols and assertions.
+  ```bash
+  make DEBUG=1
+  ```
+- Test build (with coverage): \
+  Enables debug flags plus `--coverage`. Building tests automatically enables
+  this flags, i.e. `make bin/bio.test`, `make tests`.
+  ```bash
+  make TEST=1
+  ```
+
+### Documentation
+To generate Doxygen documentation:
+```bash
+make docs
+```
 
 ## BS Utilitiy
-Miscellaneous tools for interacting for Boolean script are provided in
-[utils](utils/README.md).
+A collection of command-line tools for interacting with Boolean script is
+available in the [utils](utils/README.md) directory.
 
+## Testing
+`runtest.sh` automatically builds and executes all test binaries under `bin/`.
+
+```bash
+./runtest.sh <mode>
+```
+
+#### Modes
+- (no argument) - Only builds the tests.
+- `run` - Builds and runs all tests.
+- `gcovr` - Runs all tests and generates a coverage report using `gcovr`.
+- `valgrind` - Runs all tests under Valgrind for memory checks.
 
 ## Future Plans
-HDL-like features:
+HDL-like features for digital circuit simulation:
 ```
 expr xor(a, b) -> (y) {
     y = (a + b) * (a * b)'
@@ -49,4 +90,4 @@ sync {
     }
 }
 ```
-...electronics simulation using Boolean script
+...toward full electronics simulation using Boolean Script
