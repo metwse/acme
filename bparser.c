@@ -13,6 +13,8 @@
 void b_parser_init(struct b_parser *p)
 {
 	p->token_count = 0;
+	p->tokens = NULL;
+	p->cur = p->root = NULL;
 	b_lex_init(&p->lex);
 }
 
@@ -21,6 +23,7 @@ void *b_parser_clearinput(struct b_parser *p)
 	if (p->token_count)
 		free(p->tokens);
 	p->token_count = 0;
+	p->tokens = NULL;
 
 	return b_lex_clearinput(&p->lex);
 }
@@ -30,6 +33,7 @@ void *b_parser_setinput(struct b_parser *p, struct bio *bio)
 	if (p->token_count)
 		free(p->tokens);
 	p->token_count = 0;
+	p->tokens = NULL;
 
 	return b_lex_setinput(&p->lex, bio);
 }
@@ -49,6 +53,7 @@ struct bsymbol *new_nt_node(struct bsymbol *parent,
 	b_umem child_cap = child_cap_of(ty);
 	n->nt.ty = ty;
 	n->nt.child_count = 0;
+	n->nt.variant = 0;
 	b_assert_expr(child_cap, "a nonterminal with no children is not meaningful");
 	b_assert_expr((
 		n->nt.children =
@@ -109,4 +114,77 @@ void teardown_tree(struct bsymbol *sym, struct btoken **out, b_umem *out_len)
 		(*out_len)++;
 	}
 	free(sym);
+}
+
+void teardown_children(struct bsymbol *sym, struct btoken **out, b_umem *out_len)
+{
+	for (b_umem i = 0; i < sym->nt.child_count; i++)
+		teardown_tree(sym->nt.children[i], out, out_len);
+
+	sym->nt.child_count = 0;
+}
+
+struct btoken next_token(struct b_parser *p)
+{
+	if (p->token_count == 0) {
+		struct btoken out;
+
+		b_lex_next(&p->lex, &out);
+
+		return out;
+	} else {
+		return p->tokens[--p->token_count];
+	}
+}
+
+enum b_parser_result b_parser_try_next(struct b_parser *p, struct bsymbol *out)
+{
+	if (p->root == NULL) {
+		p->cur = p->root = new_nt_node(NULL, BNT_STMT);
+	}
+
+	struct bsymbol *sym = p->cur;
+
+	struct btoken tk;
+
+	while ((tk = next_token(p)).ty != BTK_NOTOKEN) {
+		while (1) {
+			struct production rule =
+				productions[sym->nt.ty][sym->nt.variant][sym->nt.child_count];
+
+			if (rule.end == EOC) {
+				if (sym->parent != NULL) {
+					sym = sym->parent;
+
+					teardown_children(sym, &p->tokens, &p->token_count);
+					sym->nt.variant++;
+
+					continue;
+				} else {
+					break;
+				}
+			}
+
+			if (rule.end == EOB) {
+				sym = sym->parent;
+				if (sym == NULL)
+					break;
+
+				continue;
+			}
+
+			if (rule.ty == BSYMBOL_TOKEN && tk.ty == rule.tk_ty) {
+				new_tk_node(sym, tk.ty)->tk.info = tk.info;
+			} else if (rule.ty == BSYMBOL_NONTERMINAL) {
+				sym = new_nt_node(sym, rule.nt_ty);
+			} else {
+				teardown_children(sym, &p->tokens, &p->token_count);
+				sym->nt.variant++;
+			}
+		}
+	}
+
+	*out = *p->root;
+
+	return BPARSER_READY;
 }

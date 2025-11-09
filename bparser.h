@@ -13,18 +13,12 @@
 #include "blex.h"
 
 
-/** @brief parse tree plus parser state for incremental parse */
-struct b_ptree {
-	struct bsymbol *root /** root of the tree */;
-	struct bsymbol *cur /** (current) node that parsing continues on */;
-};
-
 /** @brief parsing status */
 enum b_parser_result {
 	BPARSER_READY = 1 /** a tree is ready for consumption */,
 	BPARSER_CONTINUE /** new tokens should be provided */,
 	BPARSER_NOTOKEN /** new input source should be provided */,
-	BPARSERE
+	BPARSERE_NOMATCH
 };
 
 /** @brief struct for constructing parse trees */
@@ -32,6 +26,8 @@ struct b_parser {
 	struct btoken *tokens /** stack of tokens */;
 	b_umem token_count /** size of token stack */;
 	struct b_lex lex /** underlying lexer */;
+	struct bsymbol *root /** root of the tree */;
+	struct bsymbol *cur /** (current) node that parsing continues on */;
 };
 
 
@@ -45,7 +41,7 @@ void *b_parser_clearinput(struct b_parser *);
 void *b_parser_setinput(struct b_parser *, struct bio *);
 
 /** matches the next statement */
-enum b_parser_result b_parser_try_next(struct b_parser *, struct b_ptree *out);
+enum b_parser_result b_parser_try_next(struct b_parser *, struct bsymbol *out);
 
 
 #endif

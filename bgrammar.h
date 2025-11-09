@@ -148,7 +148,7 @@ struct bnonterminal {
 	b_umem child_count /** child node count */;
 
 	/** nonterminal production variant */
-	b_byte variant;
+	b_umem variant;
 };
 
 /** @brief terminal or nonterminal token */

@@ -1,23 +1,11 @@
 #include "../bgrammar.h"
 
-#include <ctype.h>
 #include <stdio.h>
-#include <string.h>
+
+#include "common.h"
 
 #include "../grammar.c"
 
-
-void print_tolower(const char *str)
-{
-	int len = strlen(str);
-	char lowercase[len + 1];
-
-	lowercase[len] = '\0';
-	for (int i = 0; i < len; i++)
-		lowercase[i] = tolower(str[i]);
-
-	printf("%s", lowercase);
-}
 
 void print_rule(const struct production rule[MAX_BODY_LENGTH])
 {

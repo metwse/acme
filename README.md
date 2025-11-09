@@ -58,7 +58,7 @@ available in the [utils](utils/README.md) directory.
 ./runtest.sh <mode>
 ```
 
-#### Modes
+### Modes
 - (no argument) - Only builds the tests.
 - `run` - Builds and runs all tests.
 - `gcovr` - Runs all tests and generates a coverage report using `gcovr`.
