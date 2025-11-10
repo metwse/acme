@@ -157,11 +157,80 @@ void teardown_tree(struct b_parser *p, struct bsymbol *sym)
 enum feed_result {
 	READY,
 	CONTINUE,
+	RESTORE,
 	NOMATCH,
 } feed_parser(struct b_parser *p, struct btoken tk)
 {
-	(void) p; (void) tk;
-	return CONTINUE;
+	if (is_grammar_complete(p->cur)) {
+		p->cur = p->cur->parent;
+
+		if (p->cur == NULL)
+			return READY;
+		else
+			return RESTORE;
+	}
+
+	if (is_construct_end(p->cur)) {
+		restore_token(p, tk);
+
+		struct bsymbol *parent = p->cur->parent;
+
+		// index of cur in parent
+		b_umem this_i;
+
+		for (this_i = 0; this_i < parent->nt.child_count; this_i++) {
+			if (parent->nt.children[this_i] == p->cur)
+				break;
+		}
+
+		for (b_umem i = parent->nt.child_count; i > this_i; i--)
+			teardown_tree(p, parent->nt.children[i - 1]);
+		parent->nt.child_count = this_i;
+
+		p->cur = parent;
+		while (p->cur->nt.child_count) {
+			struct bsymbol *next_cur = NULL;
+
+			for (int i = p->cur->nt.child_count; i > 0; i--) {
+				struct bsymbol *child = p->cur->nt.children[i - 1];
+
+				if (child->ty == BSYMBOL_NONTERMINAL) {
+					next_cur = child;
+					break;
+				}
+			}
+
+			if (next_cur)
+				p->cur = next_cur;
+			else
+				break;
+		}
+
+		nt_next_variant(p, p->cur);
+
+		return CONTINUE;
+	}
+
+	struct production rule = get_current_rule(p->cur);
+
+	switch (rule.ty) {
+	case BSYMBOL_TOKEN:
+		if (rule.tk_ty == tk.ty) {
+			new_tk_node(p->cur, rule.tk_ty)->tk.info = tk.info;
+
+			return CONTINUE;
+		} else {
+			nt_next_variant(p, p->cur);
+
+			return RESTORE;
+		}
+	case BSYMBOL_NONTERMINAL:
+		p->cur = new_nt_node(p->cur, rule.nt_ty);
+
+		return RESTORE;
+	}
+
+	b_unreachable()
 }
 
 enum b_parser_result b_parser_try_next(struct b_parser *p, struct bsymbol *out)
@@ -173,17 +242,27 @@ enum b_parser_result b_parser_try_next(struct b_parser *p, struct bsymbol *out)
 	enum feed_result res;
 
 	while ((tk = next_token(p)).ty != BTK_NOTOKEN) {
-		while ((res = feed_parser(p, tk)) == CONTINUE);
+		res = feed_parser(p, tk);
 
 		switch (res) {
 		case CONTINUE:
-			b_unreachable();
+			continue;
+
 		case READY:
 			*out = *p->root;
-			return BPARSER_READY;
+			p->root = NULL;
+			// fall through
 		case NOMATCH:
-			return BPARSERE_NOMATCH;
+		case RESTORE:
+			restore_token(p, tk);
+			break;
 		}
+
+		if (p->root == NULL)
+			return BPARSER_READY;
+
+		if (res == NOMATCH)
+			return BPARSERE_NOMATCH;
 	}
 
 	return BPARSER_CONTINUE;
