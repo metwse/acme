@@ -54,6 +54,21 @@ void push_child(struct bsymbol *parent, struct bsymbol *child)
 	parent->nt.children[parent->nt.child_count++] = child;
 }
 
+void restore_token(struct b_parser *p, struct btoken tk)
+{
+	if (p->tokens == NULL) {
+		p->tokens = malloc(sizeof(struct btoken));
+		p->token_count = 0;
+	} else {
+		p->tokens = realloc(p->tokens,
+				    sizeof(struct btoken) * (p->token_count + 1));
+	}
+	b_assert_expr(p->tokens, "nomem");
+
+	p->tokens[p->token_count] = tk;
+	p->token_count++;
+}
+
 struct bsymbol *new_nt_node(struct bsymbol *parent,
 			    enum bnt_type ty)
 {
@@ -96,13 +111,35 @@ struct bsymbol *new_tk_node(struct bsymbol *parent,
 	return n;
 }
 
-void nt_next_variant(struct b_parser *p, struct bsymbol *sym)
+void next_variant(struct b_parser *p)
 {
-	for (b_umem i = sym->nt.child_count; i > 0; i--)
-		teardown_tree(p, sym->nt.children[i - 1]);
+	while (p->cur->nt.child_count) {
+		struct bsymbol *next_cur = NULL;
 
-	sym->nt.variant++;
-	sym->nt.child_count = 0;
+		for (int i = p->cur->nt.child_count; i > 0; i--) {
+			struct bsymbol *child = p->cur->nt.children[i - 1];
+
+			if (child->ty == BSYMBOL_NONTERMINAL) {
+				next_cur = child;
+				break;
+			} else {
+				p->cur->nt.child_count--;
+
+				restore_token(p, child->tk);
+			}
+		}
+
+		if (next_cur)
+			p->cur = next_cur;
+		else
+			break;
+	}
+
+	for (b_umem i = p->cur->nt.child_count; i > 0; i--)
+		teardown_tree_preorder(p, p->cur->nt.children[i - 1]);
+
+	p->cur->nt.variant++;
+	p->cur->nt.child_count = 0;
 }
 
 struct btoken next_token(struct b_parser *p)
@@ -120,31 +157,11 @@ struct btoken next_token(struct b_parser *p)
 	return out;
 }
 
-void restore_token(struct b_parser *p, struct btoken tk)
-{
-	if (p->tokens == NULL) {
-		p->tokens = malloc(sizeof(struct btoken));
-		p->token_count = 0;
-	} else {
-		p->tokens = realloc(p->tokens,
-				    sizeof(struct btoken) * (p->token_count + 1));
-	}
-	b_assert_expr(p->tokens, "nomem");
-
-	p->tokens[p->token_count] = tk;
-	p->token_count++;
-}
-
-/**
- * @brief Teardown the tree into tokens.
- *
- * Pushes tokens constructed the tree to p->tokens, in reverse order.
- */
-void teardown_tree(struct b_parser *p, struct bsymbol *sym)
+void teardown_tree_postorder(struct b_parser *p, struct bsymbol *sym)
 {
 	if (sym->ty == BSYMBOL_NONTERMINAL) {
 		for (b_umem i = sym->nt.child_count; i > 0; i--)
-			teardown_tree(p, sym->nt.children[i - 1]);
+			teardown_tree_postorder(p, sym->nt.children[i - 1]);
 
 		if (sym->nt.children)
 			free(sym->nt.children);
@@ -152,6 +169,46 @@ void teardown_tree(struct b_parser *p, struct bsymbol *sym)
 		restore_token(p, sym->tk);
 	}
 	free(sym);
+}
+
+void teardown_tree_preorder(struct b_parser *p, struct bsymbol *sym)
+{
+	if (sym->ty == BSYMBOL_NONTERMINAL) {
+		for (b_umem i = 0; i < sym->nt.child_count; i++)
+			teardown_tree_preorder(p, sym->nt.children[i]);
+
+		if (sym->nt.children)
+			free(sym->nt.children);
+	} else {
+		restore_token(p, sym->tk);
+	}
+	free(sym);
+}
+
+void backtrace(struct b_parser *p)
+{
+	struct bsymbol *parent = p->cur->parent;
+
+	// index of cur in parent
+	b_umem this_i;
+
+	// begin bottom-up backtracing
+	for (this_i = 0; this_i < parent->nt.child_count; this_i++) {
+		if (parent->nt.children[this_i] == p->cur)
+			break;
+	}
+
+	for (b_umem i = parent->nt.child_count; i > this_i; i--)
+		teardown_tree_postorder(p, parent->nt.children[i - 1]);
+	parent->nt.child_count = this_i;
+
+	p->cur = parent;
+	// end
+
+	next_variant(p);
+
+	if (is_construct_end(p->cur))
+		backtrace(p);
 }
 
 enum feed_result {
@@ -173,40 +230,7 @@ enum feed_result {
 	if (is_construct_end(p->cur)) {
 		restore_token(p, tk);
 
-		struct bsymbol *parent = p->cur->parent;
-
-		// index of cur in parent
-		b_umem this_i;
-
-		for (this_i = 0; this_i < parent->nt.child_count; this_i++) {
-			if (parent->nt.children[this_i] == p->cur)
-				break;
-		}
-
-		for (b_umem i = parent->nt.child_count; i > this_i; i--)
-			teardown_tree(p, parent->nt.children[i - 1]);
-		parent->nt.child_count = this_i;
-
-		p->cur = parent;
-		while (p->cur->nt.child_count) {
-			struct bsymbol *next_cur = NULL;
-
-			for (int i = p->cur->nt.child_count; i > 0; i--) {
-				struct bsymbol *child = p->cur->nt.children[i - 1];
-
-				if (child->ty == BSYMBOL_NONTERMINAL) {
-					next_cur = child;
-					break;
-				}
-			}
-
-			if (next_cur)
-				p->cur = next_cur;
-			else
-				break;
-		}
-
-		nt_next_variant(p, p->cur);
+		backtrace(p);
 
 		return CONTINUE;
 	}
@@ -220,9 +244,11 @@ enum feed_result {
 
 			return CONTINUE;
 		} else {
-			nt_next_variant(p, p->cur);
+			restore_token(p, tk);
 
-			return RESTORE;
+			next_variant(p);
+
+			return CONTINUE;
 		}
 	case BSYMBOL_NONTERMINAL:
 		p->cur = new_nt_node(p->cur, rule.nt_ty);

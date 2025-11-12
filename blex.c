@@ -186,8 +186,9 @@ enum b_lex_result b_lex_next(struct b_lex *lex, struct btoken *out) {
 				return BLEXE_INVALID_ESCAPE_CHAR;
 		}
 
-		// parse 1 inside <> as positive int
-		if (lex->lookahead == BTK_LANGLE_BRACKET) {
+		// parse 1 inside <> or after . as positive int
+		if (lex->lookahead == BTK_LANGLE_BRACKET ||
+		    lex->lookahead == BTK_DOT) {
 			if (out->ty == BTK_TRUE) {
 				out->ty = BTK_POSITIVE_INT;
 				out->info.positive_int = 1;

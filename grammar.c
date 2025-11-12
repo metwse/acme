@@ -155,7 +155,7 @@ productions[BNONTERMINAL_COUNT][MAX_VARIANT_COUNT][MAX_BODY_LENGTH] = {
 	/* <ident_ls> ::= */
 		rrr(IDENT_LS, IDENT, COMMA),
 	/* <ident_or_member_ls> ::= */
-		rrr(IDENT_OR_MEMBER_LS, IDENT, COMMA),
+		rrr(IDENT_OR_MEMBER_LS, IDENT_OR_MEMBER, COMMA),
 	/* <expr_ls> ::= */
 		rrr(EXPR_LS, EXPR, COMMA),
 	/* <expr_or_initlist_ls> ::= */

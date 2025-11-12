@@ -96,7 +96,7 @@ int main()
 
 	struct b_parser p;
 	b_parser_init(&p);
-	teardown_tree(&p, stmts);
+	teardown_tree_postorder(&p, stmts);
 
 	for (b_umem i = 0; i < sizeof(tk) / sizeof(struct btoken); i++) {
 		b_assert_expr(tk[i].ty == p.tokens[i].ty, "tree teardown failed");
