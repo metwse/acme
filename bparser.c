@@ -181,7 +181,7 @@ void backtrace(struct b_parser *p)
 
 	next_variant(p);
 
-	if (is_construct_end(p->cur))
+	if (is_construct_end(p->cur) && p->cur->parent)
 		backtrace(p);
 }
 
