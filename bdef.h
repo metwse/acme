@@ -26,12 +26,12 @@
 			fprintf(stderr, fmt __VA_OPT__(,)__VA_ARGS__); \
 			assert(c); \
 		} \
-	} while(0);
+	} while(0)
 
 /** @brief code get into an unreachable branch */
 #define b_unreachable() do { \
 		fprintf(stderr, "reached unreachable branch"); assert(0); \
-	} while (0);
+	} while (0)
 
 /**
  * @brief Extra checks for flow of code.

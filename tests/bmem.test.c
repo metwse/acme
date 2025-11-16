@@ -71,8 +71,8 @@ int main()
 		b_mem peek = *cast(int *, b_stack_peek_elem(&s, sizeof(i)));
 		b_mem out = *cast(int *, b_stack_pop_elem(&s, sizeof(i)));
 
-		b_assert_expr(peek == i, "faulty peek_elem")
-		b_assert_expr(out == i, "faulty pop_elem")
+		b_assert_expr(peek == i, "faulty peek_elem");
+		b_assert_expr(out == i, "faulty pop_elem");
 	}
 
 	b_stack_reset(&s);

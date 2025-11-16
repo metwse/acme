@@ -234,7 +234,7 @@ enum feed_result {
 		return RETRY;
 	}
 
-	b_unreachable() // GCOV_EXCL_LINE
+	b_unreachable(); // GCOV_EXCL_LINE
 }
 
 void b_parser_start(struct b_parser *p, enum bnt_type start_symbol)
@@ -276,7 +276,7 @@ enum b_parser_result b_parser_continue(struct b_parser *p, struct bsymbol **out)
 
 			return BPARSER_READY;
 
-		case RETRY: b_unreachable() // GCOV_EXCL_LINE
+		case RETRY: b_unreachable(); // GCOV_EXCL_LINE
 		}
 	}
 

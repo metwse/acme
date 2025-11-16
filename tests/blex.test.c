@@ -62,7 +62,7 @@ void test_invalid(struct b_lex *lex, const char *invalid_tokenstream,
 	enum b_lex_result res = b_lex_next(lex, &lexeme);
 
 	b_assert_expr(expected_fail == res,
-		      "expected notoken due to invalid token")
+		      "expected notoken due to invalid token");
 
 	free(b_lex_clearinput(lex));
 }
