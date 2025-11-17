@@ -11,20 +11,28 @@
 #include <stddef.h>
 #include <assert.h>
 #include <stdio.h>  // IWYU pragma: export
+#include <signal.h>  // IWYU pragma: export
 
 
 /** maximum of two nums */
 #define b_max(a, b) ((a) > (b) ? (a) : (b))
 
 /** type casts (a macro highlights casts in the code) */
-#define cast(t, exp)	((t) (exp))
+#define cast(t, exp) ((t) (exp))
 
+
+#define bI_assert_stringify_detail(a) #a
+#define bI_assert_stringify(a) bI_assert_stringify_detail(a)
 
 /** @brief internal assertions for in-house debugging */
 #define b_assert_expr(c, fmt, ...) do { \
 		if (!(c)) { \
-			fprintf(stderr, fmt __VA_OPT__(,)__VA_ARGS__); \
-			assert(c); \
+			fprintf(stderr, "["__FILE__ ":" \
+				bI_assert_stringify(__LINE__) "] " \
+				"Assertion failed for: " \
+				   bI_assert_stringify(c) \
+				"\n> " fmt "\n" __VA_OPT__(,)__VA_ARGS__); \
+			raise(2); \
 		} \
 	} while(0)
 
