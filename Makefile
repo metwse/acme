@@ -1,64 +1,67 @@
-CC=gcc
-RM=rm -rf
+NAME = acme
 
-CFLAGS=-std=c99 -O2 -Wall -Wextra
-# debug flags
-DFLAGS=-std=c99 -O0 -g3 -Wall -Wextra -DB_ASSERT
-# test flags, added to the debug flags
-TFLAGS=--coverage
+CC = gcc
+RM = rm -rf
 
-BIN_DIR=bin
-TARGET=bs
+CFLAGS_COMMON = -std=gnu17 -Wall -Wextra
 
-OBJS=bio.o bmem.o blex.o bparser.o
-TESTS=bmem bio blex grammar
-UTILS=bnf
+CFLAGS = $(CFLAGS_COMMON) -O2
+TFLAGS = $(CFLAGS_COMMON) -Og -g3 --coverage
 
-# no need to change anything below this line
-TEST:=$(filter tests bin/%.test, $(MAKECMDGOALS))
+SRC_DIR = src
+TEST_DIR = tests
+DIST_DIR = target
 
-ifdef ASSERTIONS
-CFLAGS=-DB_ASSERT $(CFLAGS)
+# no need to change below this line
+SRCS = $(wildcard $(SRC_DIR)/*.c)
+TEST_SRCS = $(wildcard $(TEST_DIR)/*.c)
+
+ifndef DEBUG
+MODE = release
+else
+MODE = debug
+CFLAGS = $(TFLAGS)
 endif
 
-ifdef DEBUG
-CFLAGS=$(DFLAGS)
-endif
+OBJ_DIR = $(DIST_DIR)/$(MODE)/obj
+TEST_OBJ_DIR = $(DIST_DIR)/$(MODE)/obj/test
 
-ifdef TEST
-CFLAGS=$(DFLAGS) $(TFLAGS)
-endif
+OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+TEST_OBJS = $(patsubst $(TEST_DIR)/%.c,$(TEST_OBJ_DIR)/%.o,$(TEST_SRCS))
 
+LIB_OBJS = $(filter-out $(DIST_DIR)/$(MODE)/obj/main.o,$(OBJS))
 
-$(BIN_DIR)/$(TARGET): $(OBJS) $(TARGET).o | $(BIN_DIR)
-	$(CC) $(CFLAGS)      -o $@ $^
+TEST_TARGETS = $(patsubst $(TEST_DIR)/%.c,$(DIST_DIR)/%.test.$(MODE),$(TEST_SRCS))
 
-$(BIN_DIR)/%.test: $(OBJS) tests/%.test.o | $(BIN_DIR)
-	$(CC) $(CFLAGS)      -o $@ $^
+default: $(DIST_DIR)/$(NAME).$(MODE)
 
-$(BIN_DIR)/%: $(OBJS) utils/%.o | $(BIN_DIR)
-	$(CC) $(CFLAGS)      -o $@ $^
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@ -MMD
 
-.PHONY: tests clean docs
+$(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.c | $(TEST_OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@ -MMD
 
-tests: $(foreach test,$(TESTS),$(BIN_DIR)/$(test).test) | $(BIN_DIR)
-	@:
+$(DIST_DIR)/$(NAME).$(MODE): $(OBJS) | $(DIST_DIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(DIST_DIR)/%.test.$(MODE): $(TEST_OBJ_DIR)/%.o $(LIB_OBJS) | $(DIST_DIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(DIST_DIR) $(TEST_OBJ_DIR) $(OBJ_DIR):
+	mkdir -p $@
+
+tests: $(TEST_TARGETS)
+
+all: default tests
 
 docs:
 	doxygen
 
 clean:
-	$(RM) $(BIN_DIR) docs \
-		$(wildcard b*.o) $(wildcard */*.o) \
-		$(wildcard b*.gcno) $(wildcard */*.gcno) \
-		$(wildcard b*.gcda) $(wildcard */*.gcda)
+	$(RM) $(DIST_DIR) docs
 
-$(foreach target,$(target),$(shell $(CC) -MM b*.c))
+.SECONDARY: $(OBJS) $(TEST_OBJS)
+-include $(OBJS:.o=.d)
+-include $(TEST_OBJS:.o=.d)
 
-.SECONDARY:
-$(foreach test_target,$(test_target),$(shell $(CC) -MM tests/*.c))
-
-.SECONDARY:
-$(foreach util_target,$(util_target),$(shell $(CC) -MM util/*.c))
-
-$(BIN_DIR): ; mkdir $@
+.PHONY: default tests all clean

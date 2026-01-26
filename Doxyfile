@@ -1,4 +1,4 @@
-PROJECT_NAME           = "Boolean Script"
+PROJECT_NAME           = "acme"
 OUTPUT_DIRECTORY       = "docs/"
 MARKDOWN_SUPPORT       = YES
 INPUT                  = .
@@ -6,3 +6,4 @@ RECURSIVE              = YES
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO
 QUIET                  = YES
+USE_MDFILE_AS_MAINPAGE = README.md

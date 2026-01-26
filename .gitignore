@@ -1,7 +1,4 @@
-*.o
-*.gcno
-*.gcda
 compile_commands.json
-.cache/
-bin/
+target/
 docs/
+.cache/
