@@ -7,6 +7,9 @@
 #define XDRIVER_H
 
 
+/** @brief Font */
+#define WFONT "monospace:size=12:antialias=true"
+
 /** @brief Default window width */
 #define WWIDTH 512
 /** @brief Default window height */
@@ -21,7 +24,7 @@ void xconnect();
  *
  * This funciton does not fail.
  */
-void xinit_window();
+void xinit_windows();
 
 /**
  * @brief Cleanup resources used by X11.

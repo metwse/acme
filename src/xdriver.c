@@ -1,31 +1,25 @@
 #include "xdriver.h"
+#include "xdetail.h"
 #include "detail.h"  // IWYU pragma: keep
 
-#include <X11/X.h>
 #include <stdbool.h>
 #include <threads.h>
 
+#include <X11/X.h>
+#include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 
-static Display *dpy;
-static Screen *scr;
-static Window root;
-static Window win;
+Display *dpy;
+Screen *scr;
+Window root;
 
-static Colormap white;
-static Colormap black;
-
-static GC gc;
+Window win;
 
 static bool quit = false;
 static thrd_t evthread;
 
-
-static void setup_gc()
-{
-	gc = XDefaultGCOfScreen(scr);
-}
 
 static int evloop([[maybe_unused]] void *arg)
 {
@@ -40,6 +34,7 @@ static int evloop([[maybe_unused]] void *arg)
 
 		switch (ev.type) {
 		case Expose:
+			xredraw();
 			break;
 
 		case ClientMessage:
@@ -64,19 +59,33 @@ void xconnect()
 	root = XRootWindowOfScreen(scr);
 }
 
-void xinit_window()
+void xinit_windows()
 {
-	black = XBlackPixelOfScreen(scr);
-	white = XWhitePixelOfScreen(scr);
+	Colormap border_color = XBlackPixelOfScreen(scr);
+	Colormap background_color = XWhitePixelOfScreen(scr);
 
 	int x = XWidthOfScreen(scr) / 2 - WWIDTH / 2;
 	int y = XHeightOfScreen(scr) / 2 - WHEIGHT / 2;
 
 	win = XCreateSimpleWindow(dpy, root, x, y, WWIDTH, WHEIGHT, 1,
-				  black, white);
+				  border_color, background_color);
+
+
+	XSetNormalHints(dpy, win, &(XSizeHints) {
+		.flags = PMinSize,
+		.min_width = WWIDTH,
+		.min_height = WHEIGHT,
+	});
+
+	XSetWMName(dpy, win, &(XTextProperty) {
+		.value = cast(unsigned char *, "acme-sim"),
+		.format = 8, .nitems = 8,
+		.encoding = XUTF8StringStyle,
+	});
 
 	XMapWindow(dpy, win);
-	setup_gc();
+	xinit_grahpics();
+	xredraw();
 
 	// from now on, no X11 call should be done in main thread
 	thrd_create(&evthread, evloop, NULL);
@@ -85,6 +94,8 @@ void xinit_window()
 void xdisconnect()
 {
 	thrd_join(evthread, NULL);
+
+	xcleanup_grahpics();
 
 	XCloseDisplay(dpy);
 }

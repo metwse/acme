@@ -3,8 +3,10 @@ NAME = acme
 CC = gcc
 RM = rm -rf
 
+LIBS = x11 freetype2
+
 CFLAGS_COMMON = -std=gnu17 -Wall -Wextra
-LIBS = -lX11
+LIB_CFLAGS = $(shell pkg-config --cflags --libs x11 freetype2 xft)
 
 CFLAGS = $(CFLAGS_COMMON) -O2
 TFLAGS = $(CFLAGS_COMMON) -O0 -g3 --coverage
@@ -37,16 +39,16 @@ TEST_TARGETS = $(patsubst $(TEST_DIR)/%.c,$(DIST_DIR)/%.test.$(MODE),$(TEST_SRCS
 default: $(DIST_DIR)/$(NAME).$(MODE)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@ -MMD
+	$(CC) $(CFLAGS) -c $< -o $@ -MMD $(LIB_CFLAGS)
 
 $(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.c | $(TEST_OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@ -MMD
+	$(CC) $(CFLAGS) -c $< -o $@ -MMD $(LIB_CFLAGS)
 
 $(DIST_DIR)/$(NAME).$(MODE): $(OBJS) | $(DIST_DIR)
-	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LIB_CFLAGS)
 
 $(DIST_DIR)/%.test.$(MODE): $(TEST_OBJ_DIR)/%.o $(LIB_OBJS) | $(DIST_DIR)
-	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LIB_CFLAGS)
 
 $(DIST_DIR) $(TEST_OBJ_DIR) $(OBJ_DIR):
 	mkdir -p $@
