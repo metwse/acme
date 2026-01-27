@@ -1,13 +1,13 @@
-#include "lib.h"
+#include "xdriver.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 
 int main()
 {
-	printf("Hello, world!\n");
-	printf("2 + 2 = %d\n", add(2, 2));
+	xconnect();
+	xinit_window();
 
+	xdisconnect();
 	return EXIT_SUCCESS;
 }

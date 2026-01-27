@@ -4,9 +4,10 @@ CC = gcc
 RM = rm -rf
 
 CFLAGS_COMMON = -std=gnu17 -Wall -Wextra
+LIBS = -lX11
 
 CFLAGS = $(CFLAGS_COMMON) -O2
-TFLAGS = $(CFLAGS_COMMON) -Og -g3 --coverage
+TFLAGS = $(CFLAGS_COMMON) -O0 -g3 --coverage
 
 SRC_DIR = src
 TEST_DIR = tests
@@ -42,10 +43,10 @@ $(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.c | $(TEST_OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MMD
 
 $(DIST_DIR)/$(NAME).$(MODE): $(OBJS) | $(DIST_DIR)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
 $(DIST_DIR)/%.test.$(MODE): $(TEST_OBJ_DIR)/%.o $(LIB_OBJS) | $(DIST_DIR)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
 $(DIST_DIR) $(TEST_OBJ_DIR) $(OBJ_DIR):
 	mkdir -p $@
