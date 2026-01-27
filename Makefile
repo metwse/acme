@@ -6,7 +6,7 @@ RM = rm -rf
 LIBS = x11 freetype2
 
 CFLAGS_COMMON = -std=gnu17 -Wall -Wextra
-LIB_CFLAGS = $(shell pkg-config --cflags --libs x11 freetype2 xft)
+LIB_CFLAGS = $(shell pkg-config --cflags --libs x11 freetype2 xft glib-2.0)
 
 CFLAGS = $(CFLAGS_COMMON) -O2
 TFLAGS = $(CFLAGS_COMMON) -O0 -g3 --coverage
