@@ -17,24 +17,25 @@ building in debug mode.
 - `libxft2`, `libxft2-dev`
 - `libfreetype6`, `libfreetype6-dev`
 - `libglib2.0`, `libglib2.0-dev`
-- `libresc` ([repo](https://github.com/metwse/rdesc))
+- `libresc` with `stack`, `dump_dot`, and `dump_bnf` features (check out its
+  [repo](https://github.com/metwse/rdesc) for building documentation)
 
 ## Future Plans
 ```rs
 lut<2, 1> nand = (0b0111)
 {
     prop_delay: 1,
-    _shape: [[0, 0], [3, 0], [4, 1]...],
-    _input_port_pos: [[0, 2], [0, 4]],
-    _out_port_pos: [[5, 3]],
+    _shape: [(0, 0), (3, 0), (4, 1)...],
+    _input_port_pos: [(0, 2), (0, 4)],
+    _out_port_pos: [(5, 3)]
 }; /* properties starting with '_' are metadata fields and ignored by the
       simulation engine */
 
 
-wire a = 1 { _pos: [5, 12], }; /* wires require initial state */
-wire b = 0 { _pos: [5, 14], };
-wire c = 1 { _pos: [10, 13], };
+wire a = 1 { _pos: [(5, 12), uut1] }; /* wires require initial state */
+wire b = 0 { _pos: [(5, 14), uut1] };
+wire c = 1 { _pos: [uut1, (10, 13)] };
 
 
-unit<nand> uut1 = (a, b) -> (c) { _pos: [10, 10], };
+unit<nand> uut1 = (a, b) -> (c) { _pos: (10, 10) };
 ```
