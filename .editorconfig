@@ -11,6 +11,6 @@ insert_final_newline = true
 indent_style = tab
 indent_size = 8
 
-[**.{c,h}]
-indent_style = tab
-indent_size = 8
+[**.{cpp,hpp}]
+indent_style = space
+indent_size = 4

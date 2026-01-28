@@ -1,7 +1,7 @@
 // internal macros of acme (taken from rdesc)
 
-#ifndef DETAIL_H
-#define DETAIL_H
+#ifndef DETAIL_HPP
+#define DETAIL_HPP
 
 
 #ifdef __linux__
@@ -12,15 +12,15 @@
 #define assert_stringify(a) assert_stringify_detail(a)
 
 #define assert(c, fmt, ...) do { \
-		if (!(c)) { \
-			fprintf(stderr, "["__FILE__ ":" \
-				assert_stringify(__LINE__) "] " \
-				"Assertion failed for: " \
-				   assert_stringify(c) \
-				"\n> " fmt "\n" __VA_OPT__(,)__VA_ARGS__); \
-			raise(SIGINT); \
-		} \
-	} while(0)
+        if (!(c)) { \
+            fprintf(stderr, "[" __FILE__ ":" \
+                    assert_stringify(__LINE__) "] " \
+                    "Assertion failed for: " \
+                        assert_stringify(c) \
+                    "\n> " fmt "\n" __VA_OPT__(,)__VA_ARGS__); \
+            raise(SIGINT); \
+        } \
+    } while(0)
 #else
 #include <assert.h>
 #endif
@@ -31,14 +31,11 @@
 
 /* extra checks for flow of code. */
 #define assert_logic(c, fmt, ...) \
-	assert(c, "logic error: " fmt " is/are not meaningful" \
-	       __VA_OPT__(,)__VA_ARGS__)
+    assert(c, "logic error: " fmt " is/are not meaningful" \
+           __VA_OPT__(,)__VA_ARGS__)
 
 /* code reached unreachable branch */
 #define unreachable() assert(0, "reached unreachable branch")
-
-/* macro highlights type casts */
-#define cast(t, exp) ((t) (exp))
 
 
 #endif
