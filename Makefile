@@ -5,7 +5,7 @@ RM = rm -rf
 
 LIBS = x11 freetype2
 
-CFLAGS_COMMON = -std=gnu++17 -Wall -Wextra
+CFLAGS_COMMON = -std=gnu++20 -Wall -Wextra
 LIB_CFLAGS = $(shell pkg-config --cflags --libs x11 freetype2 xft) -lrdesc -lstdc++
 
 CFLAGS = $(CFLAGS_COMMON) -O2

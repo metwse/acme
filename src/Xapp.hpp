@@ -9,27 +9,12 @@
 
 #include <X11/Xlib.h>
 
+#include <memory>
 #include <thread>
 
 
 class App;
 
-/**
- * @class XConnection
- * @brief RAII wrapper for the X11 Display connection.
- */
-class XConnection {
-public:
-    /** @brief Opens a connection to the default X display. */
-    XConnection()
-        : dpy { XOpenDisplay(NULL) } {};
-
-    /** @brief Closes the X display connection. */
-    ~XConnection()
-        { XCloseDisplay(dpy); }
-
-    Display *dpy /**< Pointer to the X11 Display structure. */;
-};
 
 /**
  * @class EvLoop
@@ -41,9 +26,8 @@ public:
     EvLoop(App *app_)
         : app { app_ } {}
 
-    /** @brief Ensures the worker thread is joined before destruction. */
-    ~EvLoop()
-        { evloop.join(); };
+    /** @brief Default destructor relies on jthread for cleanup. */
+    ~EvLoop() = default;
 
     /** @brief Spawns the worker thread and begins execution. */
     void start();
@@ -54,17 +38,19 @@ private:
     void run();
 
     App *app;
-    std::thread evloop;
+    std::jthread evloop;
 };
 
 /**
  * @class App
  * @brief Main Application orchestrator and X11 resource manager.
  */
-class App : public XConnection {
+class App {
 public:
     App() :
-        evloop { this }, scr { XDefaultScreenOfDisplay(dpy) },
+        dpy { std::unique_ptr<Display, DisplayDeleter>(XOpenDisplay(NULL)) },
+        evloop { this },
+        scr { XDefaultScreenOfDisplay(dpy.get()) },
         root { XRootWindowOfScreen(scr) } {}
 
     /** @brief Default destructor relies on RAII for member cleanup. */
@@ -75,6 +61,17 @@ public:
 
 private:
     friend EvLoop;
+
+    /** @brief Function object for deleting display. */
+    class DisplayDeleter {
+    public:
+        void operator()(Display* dpy) const {
+            if (dpy)
+                XCloseDisplay(dpy);
+        }
+    };
+
+    std::unique_ptr<Display, DisplayDeleter> dpy;
 
     EvLoop evloop;
 

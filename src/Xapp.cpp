@@ -6,7 +6,7 @@
 
 #include <thread>
 
-using std::thread;
+using std::jthread;
 
 
 void App::init() {
@@ -16,42 +16,42 @@ void App::init() {
     int x = XWidthOfScreen(scr) / 2 - WIDTH / 2;
     int y = XHeightOfScreen(scr) / 2 - HEIGHT / 2;
 
-    win = XCreateSimpleWindow(dpy, root, x, y, WIDTH, HEIGHT, 1,
+    win = XCreateSimpleWindow(dpy.get(), root, x, y, WIDTH, HEIGHT, 1,
                               border_color, background_color);
 
     XSizeHints size_hints;
     size_hints.flags = PMinSize;
     size_hints.min_width = WIDTH;
     size_hints.min_height = HEIGHT;
-    XSetNormalHints(dpy, win, &size_hints);
+    XSetNormalHints(dpy.get(), win, &size_hints);
 
     XTextProperty wm_name = {
         .value = (unsigned char *)("acme-sim"),
         .encoding = XUTF8StringStyle,
         .format = 8, .nitems = 8,
     };
-    XSetWMName(dpy, win, &wm_name);
+    XSetWMName(dpy.get(), win, &wm_name);
 
-    XMapWindow(dpy, win);
+    XMapWindow(dpy.get(), win);
 
     evloop.start();
 }
 
 void EvLoop::start() {
-    evloop = thread(&EvLoop::run, this);
+    evloop = jthread(&EvLoop::run, this);
 }
 
 void EvLoop::run() {
-    Atom wm_delete_win = XInternAtom(app->dpy, "WM_DELETE_WINDOW", False);
-    XSetWMProtocols(app->dpy, app->win, &wm_delete_win, 1);
+    Atom wm_delete_win = XInternAtom(app->dpy.get(), "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(app->dpy.get(), app->win, &wm_delete_win, 1);
 
-    XSelectInput(app->dpy, app->win, ExposureMask);
+    XSelectInput(app->dpy.get(), app->win, ExposureMask);
 
     XEvent ev;
     bool quit = false;
 
     while (!quit) {
-        XNextEvent(app->dpy, &ev);
+        XNextEvent(app->dpy.get(), &ev);
 
         switch (ev.type) {
             case Expose:
