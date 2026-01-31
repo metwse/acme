@@ -3,11 +3,16 @@
  * @brief HDL grammar definition.
  */
 
+#pragma once
 #ifndef GRAMMAR_HPP
 #define GRAMMAR_HPP
 
 
 #include <rdesc/cfg.h>
+
+#include <memory>
+
+class Cfg;  /* defined in rdesc.hpp */
 
 /** @brief add TK_ prefix in `TK` macro */
 #define PREFIX_TK(tk) TK_ ## tk
@@ -161,6 +166,9 @@ grammar[NT_COUNT][NT_VARIANT_COUNT][NT_BODY_LENGTH] = {
     /* <table_entry_ls> ::= */
     rrr(TABLE_ENTRY_LS, NT(TABLE_ENTRY), TK(COMMA)),
 };
+
+
+std::shared_ptr<Cfg> load_grammar();
 
 
 #endif

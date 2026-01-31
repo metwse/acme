@@ -1,4 +1,5 @@
 #include "Xapp.hpp"
+#include "grammar.hpp"
 
 #include <X11/Xlib.h>
 
@@ -15,6 +16,8 @@ int main(int argc, char *argv[]) {
 
         return EXIT_FAILURE;
     }
+
+    auto grammar = load_grammar();
 
     XInitThreads();
     App app;
