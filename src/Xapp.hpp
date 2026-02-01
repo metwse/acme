@@ -3,8 +3,8 @@
  * @brief Simulation driver interface for X11.
  */
 
-#ifndef XDRIVER_HPP
-#define XDRIVER_HPP
+#ifndef XAPP_HPP
+#define XAPP_HPP
 
 
 #include <X11/Xlib.h>
