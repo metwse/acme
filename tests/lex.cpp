@@ -52,6 +52,8 @@ void test_num(array<int, size> base_,
         assert(token.id == TK_NUM);
         assert(num == seminfo->num);
         assert(base == seminfo->base);
+
+        delete seminfo;
     }
 }
 
