@@ -57,12 +57,36 @@ void test_num(array<int, size> base_,
     }
 }
 
+template<size_t size>
+void test_table_value(array<const char *, size> table_value_,
+                      const char *input) {
+    stringstream ss;
+
+    ss << input;
+
+    Lex lex { ss };
+    for (size_t i = 0; i < size;) {
+        auto token = lex.next();
+
+        auto seminfo = (TableValueInfo *) token.seminfo;
+
+        if (token.id == TK_TABLE_VALUE) {
+            auto table_value = table_value_[i++];
+
+            assert(seminfo->value == table_value);
+        }
+
+        delete seminfo;
+    }
+}
+
 int main() {
     test_grammar(array {
         TK_LUT, TK_LANGLE_BRACKET, TK_NUM, TK_COMMA, TK_NUM, TK_RANGLE_BRACKET,
             TK_IDENT, TK_EQ, TK_LPAREN, TK_NUM, TK_RPAREN, TK_SEMI,
 
-        TK_WIRE, TK_IDENT, TK_EQ, TK_NUM, TK_SEMI,
+        TK_WIRE, TK_IDENT, TK_EQ, TK_NUM, TK_LCURLY, TK_IDENT,
+            TK_COLON, TK_TABLE_VALUE, TK_RCURLY, TK_SEMI,
 
         TK_UNIT, TK_LANGLE_BRACKET, TK_IDENT, TK_RANGLE_BRACKET, TK_IDENT,
             TK_EQ, TK_LPAREN, TK_IDENT, TK_COMMA, TK_IDENT, TK_RPAREN,
@@ -70,7 +94,7 @@ int main() {
 
         TK_NOTOKEN,
     }, "lut<2, 1> nand = (0b0111);"
-       "wire a = 1;"
+       "wire a = 1 { a: 1 };"
        "unit<nand> uut1 = (a, b) -> (c);");
 
     test_grammar(array {
@@ -78,6 +102,18 @@ int main() {
 
         TK_NOTOKEN,
     }, " a 0xAa 0o0 0b101011 01 1 0 ");
+
+    test_grammar(array {
+        TK_LCURLY, TK_IDENT, TK_COLON, TK_TABLE_VALUE, TK_COMMA, TK_IDENT,
+            TK_COLON, TK_TABLE_VALUE, TK_COMMA, TK_RCURLY,
+
+        TK_NOTOKEN,
+    }, " { _pos: 123, _shape: [[1, 2], ident], } ");
+
+    // no table value
+    test_grammar(array { TK_IDENT, TK_COLON, TK_NOTOKEN, }, "a: ,");
+    test_grammar(array { TK_IDENT, TK_COLON, TK_NOTOKEN, }, "a: ");
+    test_grammar(array { TK_IDENT, TK_COLON, TK_NOTOKEN, }, "a: a");
 
     // number continued with alhanumeric
     test_grammar(array { TK_NOTOKEN, }, "123a");
@@ -101,4 +137,7 @@ int main() {
     test_num(array { 2, 16, 8, 16 },
              { "11", "aA", "0", "1" },
              " 0b11 0xaA 0o0 0x1");
+
+    test_table_value(array { "a", "[123]", "[[], 1]", "TEST " },
+                     "{ _123: a, _pos: [123], _test: [[], 1], _aa: TEST }");
 }

@@ -16,6 +16,18 @@ struct rdesc_cfg_token Lex::next() {
     if (isspace(c) || s.eof())
         return { TK_NOTOKEN, nullptr };
 
+    if (lookahead != TK_NOTOKEN) {
+        auto lookahead_ = lookahead;
+        lookahead = TK_NOTOKEN;
+
+        switch (lookahead_) {
+        case TK_COLON:
+            return lex_table_value(c);
+        default:
+            break;
+        }
+    }
+
     if (isdigit(c))
         return lex_num(c);
 
@@ -110,8 +122,10 @@ struct rdesc_cfg_token Lex::lex_punctuation(char c) {
     }
 
     for (int i = TK_LPAREN; i <= TK_EQ; i++)
-        if (c == tk_names[i][0])
-                return { i, nullptr }; // punctuation
+        if (c == tk_names[i][0]) {
+            lookahead = (enum tk) i;
+            return { i, nullptr }; // punctuation
+        }
 
 
     return { TK_NOTOKEN, nullptr };
@@ -143,6 +157,37 @@ struct rdesc_cfg_token Lex::lex_ident_or_keyword(char c) {
     } else {
         // syntax error, invalid token just after the identifier
         return { TK_NOTOKEN, nullptr };
+    }
+}
+
+struct rdesc_cfg_token Lex::lex_table_value(char c) {
+    if (c == ',' || c == '}') {
+        // syntax error, no table value
+        return { TK_NOTOKEN, nullptr };
+    }
+
+    size_t bracket_depth = 0;
+    string table_value;
+
+    while (!(bracket_depth == 0 && (c == ',' || c == '}')) && !s.eof()) {
+        if (c == '[')
+            bracket_depth++;
+        else if (c == ']')
+            bracket_depth--;
+
+        table_value += c;
+        c = s.get();
+    }
+
+    if (s.eof()) {
+        // syntax error
+        return { TK_NOTOKEN, nullptr };
+    } else {
+        s.unget();
+
+        auto *seminfo = new TableValueInfo { table_value };
+
+        return { TK_TABLE_VALUE, seminfo };
     }
 }
 

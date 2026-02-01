@@ -7,6 +7,8 @@
 #define LEX_HPP
 
 
+#include "grammar.hpp"
+
 #include <rdesc/cfg.h>
 
 #include <cstddef>
@@ -34,10 +36,12 @@ private:
     struct rdesc_cfg_token lex_num(char c);
     struct rdesc_cfg_token lex_ident_or_keyword(char c);
     struct rdesc_cfg_token lex_punctuation(char c);
+    struct rdesc_cfg_token lex_table_value(char c);
 
     std::istream s;
     std::map<std::string, size_t> idents;
     size_t last_ident_id;
+    enum tk lookahead = TK_NOTOKEN;
 };
 
 class SemInfo {
@@ -65,5 +69,16 @@ public:
 
     size_t id;
 };
+
+class TableValueInfo : public SemInfo {
+public:
+    TableValueInfo(std::string value_)
+        : value { std::move(value_) } {}
+
+    virtual ~TableValueInfo() = default;
+
+    std::string value;
+};
+
 
 #endif
