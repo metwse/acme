@@ -1,7 +1,6 @@
 #include "lex.hpp"
 #include "grammar.hpp"
 
-#include <cstdio>
 #include <rdesc/cfg.h>
 
 #include <cstddef>
@@ -12,129 +11,130 @@ using std::string;
 
 
 struct rdesc_cfg_token Lex::next() {
-    struct rdesc_cfg_token out { .id = TK_NOTOKEN, .seminfo = NULL };
+    char input;
+    for (input = ' '; isspace(input) && !s.eof(); input = s.get())
+        ;
 
-    string *token_str = new string;
+    if (s.eof())
+        return { TK_NOTOKEN, nullptr };
+
+    // TODO: Implement more generic way for handling multi-character
+    // punctuation
+    if (input == '-') {
+        char peek = s.get();
+        if (peek == '>')
+            return { TK_RARROW, nullptr };
+        else
+            return { TK_NOTOKEN, nullptr };  // sytax error
+    }
+
+    s.unget();
+
+    string token_str;
 
     size_t token_len;
     bool valid_ident = true, valid_num = true;
-    bool possible_num_kind_selection = false;
 
-    bool collect_multichar_punctuation = false;
+    int number_base = 10;
 
-    char input;
     for (token_len = 0;; token_len++) {
+        input = s.get();
+        if (s.eof())
+            return { TK_NOTOKEN, nullptr };
 
-        if (peek) {
-            input = peek;
-            peek = 0;
-        } else {
-            input = s.get();
-            if (s.eof()) {
-                delete token_str;
-                return out;
-            }
-        }
+        if (isspace(input))
+            break;
 
-        // TODO: better way for handling RARROW
-        if (token_len == 0 && input == '-') {
-            collect_multichar_punctuation = true;
-            continue;
-        } else if (collect_multichar_punctuation) {
-            if (input == '>') {
-                out.id = TK_RARROW;
-                delete token_str;
-                return out; // RARROW
-            }
-
-            delete token_str;
-            return out; // sytax error
-        }
-
-        if (possible_num_kind_selection) {
-            if (!isdigit(input)) {
-                switch (input) {
-                case 'b':
-                    break; // TODO
-                case 'o':
-                    break; // TODO
-                case 'x':
-                    break; // TODO
-                default:
-                    delete token_str;
-                    return out; // sytax error
-                }
-            }
-        }
-
-        if (isspace(input)) {
-            if (token_len == 0) {
-                token_len--;
-                continue;
-            } else {
-                break;
-            }
-        }
-
+        bool punctuation_break = false;
         for (int i = TK_LPAREN; i <= TK_EQ; i++)
             if (input == tk_names[i][0]) {
                 if (token_len == 0) {
-                    out.id = i;
-                    delete token_str;
-                    return out; // end of buffer
+                    return { i, nullptr }; // punctuation
                 } else {
                     // One-character "punctuation" can break an identifier or
                     // num read. Hold the character for the next lexeme.
-                    peek = input;
+                    punctuation_break = true;
                     break;
                 }
             }
 
         // transfer break from inner loop to outer for loop.
-        if (peek)
+        if (punctuation_break) {
+            s.unget();
             break;
+        }
 
+        bool skip_input = false;
         if (token_len == 0 && input == '0') {
             valid_ident = false;
-            possible_num_kind_selection = true;
-        } else {
-            if (!isdigit(input)) {
-                if (possible_num_kind_selection)
-                    possible_num_kind_selection = false;
-                else
-                    valid_num = false;
+
+            char number_base_identifier = s.get();
+
+            skip_input = true;
+            switch (number_base_identifier) {
+            case 'b':
+                number_base = 2;
+                break;
+            case 'o':
+                number_base = 8;
+                break;
+            case 'x':
+                number_base = 16;
+                break;
+            default:
+                skip_input = false;
+                s.unget();
             }
+        } else {
+            if (!(isdigit(input) ||
+                  (number_base == 16 && (
+                    ('a' <= input && input <= 'f') ||
+                    ('A' <= input && input <= 'F')
+                  ))
+               ))
+                valid_num = false;
 
             if (!(isalnum(input) || input == '_'))
                 valid_ident = false;
 
             if (!valid_ident && !valid_num) {
-                peek = input;
+                s.unget();
                 break;
             }
         }
 
-        *token_str += input;
+        // token_len is the length of raw token. 0b, 0o, and 0x omitted so
+        // the length of token_str may be less than token_len.
+        if (!skip_input)
+            token_str += input;
     }
 
     // DO NOT REORDER valid_num_int -> valid_ident check order, as valid_ident
     // variable is true for num tokens
     if (token_len && valid_num) {
-        out.id = TK_NUM;
-        out.seminfo = token_str;
+        auto *seminfo = new NumInfo { number_base, token_str };
+
+        return { TK_NUM, seminfo };
     } else if (token_len && valid_ident) {
         for (int i = TK_LUT; i <= TK_UNIT; i++)
-            if (*token_str == tk_names[i]) {
-                out.id = i;
-                delete token_str;
-                return out; // keyword
+            if (token_str == tk_names[i]) {
+                return { i, nullptr }; // keyword
             }
 
-        out.id = TK_IDENT;
-        out.seminfo = token_str;
-    } else {
-        delete token_str;
+        auto *seminfo = new IdentInfo { Lex::ident_id(token_str) };
+
+        return { TK_IDENT, seminfo };
     }
 
-    return out;
+    return { TK_NOTOKEN, nullptr };
+}
+
+size_t Lex::ident_id(const std::string &s) {
+    size_t &id = idents[s];
+
+    if (id == 0) {
+        id = ++last_ident_id;
+    }
+
+    return id;
 }

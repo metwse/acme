@@ -27,8 +27,13 @@ int main() {
     Lex lex { ss };
 
     for (auto token : tokens) {
-        enum tk lex_token = (enum tk) lex.next().id;
+        auto lex_token = lex.next();
 
-        assert(lex_token == token);
+        auto lex_token_id = (enum tk) lex_token.id;
+        auto lex_token_seminfo = (SemInfo *) lex_token.seminfo;
+
+        delete lex_token_seminfo;
+
+        assert(lex_token_id == token);
     }
 }
