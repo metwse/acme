@@ -11,130 +11,146 @@ using std::string;
 
 
 struct rdesc_cfg_token Lex::next() {
-    char input;
-    for (input = ' '; isspace(input) && !s.eof(); input = s.get())
-        ;
+    char c = skip_space();
 
-    if (s.eof())
+    if (isspace(c) || s.eof())
         return { TK_NOTOKEN, nullptr };
 
-    // TODO: Implement more generic way for handling multi-character
-    // punctuation
-    if (input == '-') {
+    if (isdigit(c))
+        return lex_num(c);
+
+    if (isalnum(c) || c == '_')
+        return lex_ident_or_keyword(c);
+
+    return lex_punctuation(c);
+}
+
+bool is_breaking(char c) {
+    for (int i = TK_LPAREN; i <= TK_RARROW; i++)
+        if (c == tk_names[i][0])
+            return true;
+
+    return isspace(c);
+}
+
+char Lex::skip_space() {
+    char c;
+    for (c = ' ';
+         isspace(c) && !s.eof();
+         c = s.get())
+        ;
+
+    return c;
+}
+
+struct rdesc_cfg_token Lex::lex_num(char c) {
+    int base = 10;
+    string num;
+
+    if (c == '0') {
+        switch (s.peek()) {
+        case 'x':
+            base = 16;
+            break;
+        case 'o':
+            base = 8;
+            break;
+        case 'b':
+            base = 2;
+            break;
+        default:
+            break;
+        }
+
+        if (base != 10)
+            s.get();
+
+        c = s.get();
+    }
+
+    while (
+        ((base == 16 &&
+            (isdigit(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F'))) ||
+         (base == 10 &&
+            isdigit(c)) ||
+         (base == 8 &&
+            ('0' <= c && c <= '7')) ||
+         (base == 2 &&
+            (c == '0' || c == '1')))
+        && !s.eof()
+    ) {
+        num += c;
+        c = s.get();
+    }
+
+    if ((s.eof() || is_breaking(c)) && (num.length() || base == 10)) {
+        if (num.length() == 0)
+            num += '0';
+
+        auto *seminfo = new NumInfo { base, num };
+
+        if (!s.eof())
+            s.unget();
+
+        return { TK_NUM, seminfo };
+    } else {
+        // syntax error, probably number continued with an alphanumeric
+        // character
+        return { TK_NOTOKEN, nullptr };
+    }
+}
+
+struct rdesc_cfg_token Lex::lex_punctuation(char c) {
+    if (c == '-') {
         char peek = s.get();
         if (peek == '>')
             return { TK_RARROW, nullptr };
         else
-            return { TK_NOTOKEN, nullptr };  // sytax error
+            return { TK_NOTOKEN, nullptr };  // syntax error, malformed rarrow
     }
 
-    s.unget();
+    for (int i = TK_LPAREN; i <= TK_EQ; i++)
+        if (c == tk_names[i][0])
+                return { i, nullptr }; // punctuation
 
-    string token_str;
-
-    size_t token_len;
-    bool valid_ident = true, valid_num = true;
-
-    int number_base = 10;
-
-    for (token_len = 0;; token_len++) {
-        input = s.get();
-        if (s.eof())
-            return { TK_NOTOKEN, nullptr };
-
-        if (isspace(input))
-            break;
-
-        bool punctuation_break = false;
-        for (int i = TK_LPAREN; i <= TK_EQ; i++)
-            if (input == tk_names[i][0]) {
-                if (token_len == 0) {
-                    return { i, nullptr }; // punctuation
-                } else {
-                    // One-character "punctuation" can break an identifier or
-                    // num read. Hold the character for the next lexeme.
-                    punctuation_break = true;
-                    break;
-                }
-            }
-
-        // transfer break from inner loop to outer for loop.
-        if (punctuation_break) {
-            s.unget();
-            break;
-        }
-
-        bool skip_input = false;
-        if (token_len == 0 && input == '0') {
-            valid_ident = false;
-
-            char number_base_identifier = s.get();
-
-            skip_input = true;
-            switch (number_base_identifier) {
-            case 'b':
-                number_base = 2;
-                break;
-            case 'o':
-                number_base = 8;
-                break;
-            case 'x':
-                number_base = 16;
-                break;
-            default:
-                skip_input = false;
-                s.unget();
-            }
-        } else {
-            if (!(isdigit(input) ||
-                  (number_base == 16 && (
-                    ('a' <= input && input <= 'f') ||
-                    ('A' <= input && input <= 'F')
-                  ))
-               ))
-                valid_num = false;
-
-            if (!(isalnum(input) || input == '_'))
-                valid_ident = false;
-
-            if (!valid_ident && !valid_num) {
-                s.unget();
-                break;
-            }
-        }
-
-        // token_len is the length of raw token. 0b, 0o, and 0x omitted so
-        // the length of token_str may be less than token_len.
-        if (!skip_input)
-            token_str += input;
-    }
-
-    // DO NOT REORDER valid_num_int -> valid_ident check order, as valid_ident
-    // variable is true for num tokens
-    if (token_len && valid_num) {
-        auto *seminfo = new NumInfo { number_base, token_str };
-
-        return { TK_NUM, seminfo };
-    } else if (token_len && valid_ident) {
-        for (int i = TK_LUT; i <= TK_UNIT; i++)
-            if (token_str == tk_names[i]) {
-                return { i, nullptr }; // keyword
-            }
-
-        auto *seminfo = new IdentInfo { Lex::ident_id(token_str) };
-
-        return { TK_IDENT, seminfo };
-    }
 
     return { TK_NOTOKEN, nullptr };
 }
 
-size_t Lex::ident_id(const std::string &s) {
+struct rdesc_cfg_token Lex::lex_ident_or_keyword(char c) {
+    string ident;
+
+    while (
+        (isalnum(c) || c == '_')
+        && !s.eof()
+    ) {
+        ident += c;
+        c = s.get();
+    }
+
+    if (s.eof() || is_breaking(c)) {
+        if (!s.eof())
+            s.unget();
+
+        for (int i = TK_LUT; i <= TK_UNIT; i++)
+            if (ident == tk_names[i]) {
+                return { i, nullptr }; // keyword
+            }
+
+        auto *seminfo = new IdentInfo { Lex::get_ident_id(ident) };
+
+        return { TK_IDENT, seminfo };
+    } else {
+        // syntax error, invalid token just after the identifier
+        return { TK_NOTOKEN, nullptr };
+    }
+}
+
+size_t Lex::get_ident_id(const string &s) {
     size_t &id = idents[s];
 
-    if (id == 0) {
+    if (id == 0)
         id = ++last_ident_id;
-    }
 
     return id;
 }

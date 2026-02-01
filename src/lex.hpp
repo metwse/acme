@@ -27,7 +27,13 @@ public:
     struct rdesc_cfg_token next();
 
 private:
-    size_t ident_id(const std::string &);
+    size_t get_ident_id(const std::string &);
+
+    char skip_space();
+
+    struct rdesc_cfg_token lex_num(char c);
+    struct rdesc_cfg_token lex_ident_or_keyword(char c);
+    struct rdesc_cfg_token lex_punctuation(char c);
 
     std::istream s;
     std::map<std::string, size_t> idents;
