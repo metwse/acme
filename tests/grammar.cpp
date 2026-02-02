@@ -1,12 +1,12 @@
 #include "../src/rdesc.hpp"
 #include "../src/grammar.hpp"
 #include "../src/lex.hpp"
+#include "../src/detail.hpp"
 
 #include <rdesc/rdesc.h>
 #include <rdesc/util.h>
 
 #include <cstdio>
-#include <cassert>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -29,7 +29,7 @@ void test_grammar(shared_ptr<Cfg>cfg, const char *input) {
     for (auto tk = lex.next(); tk.id != TK_NOTOKEN; tk = lex.next())
         parser.pump(&out, &tk);
 
-    assert(out);
+    assert(out, "could not complete CST");
 
     rdesc_dump_dot(out, tk_printer, nt_names, stdout);
 

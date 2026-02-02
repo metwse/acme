@@ -1,9 +1,9 @@
 #include "../src/lex.hpp"
 #include "../src/grammar.hpp"
+#include "../src/detail.hpp"
 
 #include <array>
 #include <string>
-#include <cassert>
 #include <cstddef>
 #include <sstream>
 
@@ -28,7 +28,7 @@ void test_grammar(array<enum tk, size> token_ids,
 
         delete lex_token_seminfo;
 
-        assert(lex_token_id == token_id);
+        assert(lex_token_id == token_id, "token mismatch");
     }
 }
 
@@ -49,9 +49,9 @@ void test_num(array<int, size> base_,
 
         auto seminfo = (NumInfo *) token.seminfo;
 
-        assert(token.id == TK_NUM);
-        assert(num == seminfo->num);
-        assert(base == seminfo->base);
+        assert(token.id == TK_NUM, "token mismatch");
+        assert(num == seminfo->num, "num value mismatch");
+        assert(base == seminfo->base, "base mismatch");
 
         delete seminfo;
     }
@@ -73,7 +73,7 @@ void test_table_value(array<const char *, size> table_value_,
         if (token.id == TK_TABLE_VALUE) {
             auto table_value = table_value_[i++];
 
-            assert(seminfo->value == table_value);
+            assert(seminfo->value == table_value, "table value mismatch");
         }
 
         delete seminfo;
