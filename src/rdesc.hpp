@@ -59,11 +59,13 @@ public:
     Rdesc(Rdesc &&other) {
         other.p = p;
         other.cfg = cfg;
-        p = (struct rdesc) {};
+        destroyed = true;
     };
 
-    ~Rdesc()
-        { rdesc_destroy(&p); }
+    ~Rdesc() {
+        if (!destroyed)
+            rdesc_destroy(&p);
+    }
 
     void start(int start_symbol)
         { rdesc_start(&p, start_symbol); }
@@ -77,6 +79,8 @@ public:
 
 private:
     struct rdesc p;
+
+    bool destroyed = false;
 
     std::shared_ptr<Cfg> cfg  /**< shared_ptr to Cfg class in just for preventing
                                    deletion of underlying struct rdesc_cfg. */;

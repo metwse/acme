@@ -44,8 +44,8 @@ private:
 
 class Wire {
 public:
-    Wire(WireId id_, bool state_, auto affects_)
-        : id { id_ }, state { state_ }, affects { std::move(affects_) } {}
+    Wire(WireId id_, bool state_)
+        : id { id_ }, state { state_ }, affects {} {}
 
     WireId id;
     bool state;
@@ -70,6 +70,10 @@ public:
         : rdesc { std::move(rdesc_) } {};
 
     bool pump(struct rdesc_cfg_token tk);
+
+    void interpret_lut(struct rdesc_node *);
+    void interpret_wire(struct rdesc_node *);
+    void interpret_unit(struct rdesc_node *);
 
 private:
     std::map<UnitId, Lut> luts;

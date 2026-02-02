@@ -7,10 +7,13 @@
 #define LEX_HPP
 
 
+#include "core.hpp"
 #include "grammar.hpp"
 
+#include <cstdint>
 #include <rdesc/cfg.h>
 
+#include <cinttypes>
 #include <cstddef>
 #include <map>
 #include <iostream>
@@ -64,6 +67,10 @@ public:
         : base { base_ }, num { std::move(num_) } {}
 
     virtual ~NumInfo() = default;
+
+    std::unique_ptr<Bitvec> into_bitvec();
+    uintmax_t decimal()
+        { return strtoumax(num.c_str(), NULL, base); }
 
     int base;
     std::string num;
