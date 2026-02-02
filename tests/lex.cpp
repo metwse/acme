@@ -92,7 +92,7 @@ int main() {
             TK_EQ, TK_LPAREN, TK_IDENT, TK_COMMA, TK_IDENT, TK_RPAREN,
             TK_RARROW, TK_LPAREN, TK_IDENT, TK_RPAREN, TK_SEMI,
 
-        TK_NOTOKEN,
+        TK_EOF,
     }, "lut<2, 1> nand = (0b0111);"
        "wire a = 1 { a: 1 };"
        "unit<nand> uut1 = (a, b) -> (c);");
@@ -100,20 +100,20 @@ int main() {
     test_grammar(array {
         TK_IDENT, TK_NUM, TK_NUM, TK_NUM, TK_NUM, TK_NUM, TK_NUM,
 
-        TK_NOTOKEN,
+        TK_EOF,
     }, " a 0xAa 0o0 0b101011 01 1 0 ");
 
     test_grammar(array {
         TK_LCURLY, TK_IDENT, TK_COLON, TK_TABLE_VALUE, TK_COMMA, TK_IDENT,
             TK_COLON, TK_TABLE_VALUE, TK_COMMA, TK_RCURLY,
 
-        TK_NOTOKEN,
+        TK_EOF,
     }, " { _pos: 123, _shape: [[1, 2], ident], } ");
 
     // no table value
     test_grammar(array { TK_IDENT, TK_COLON, TK_NOTOKEN, }, "a: ,");
-    test_grammar(array { TK_IDENT, TK_COLON, TK_NOTOKEN, }, "a: ");
-    test_grammar(array { TK_IDENT, TK_COLON, TK_NOTOKEN, }, "a: a");
+    test_grammar(array { TK_IDENT, TK_COLON, TK_EOF, }, "a: ");
+    test_grammar(array { TK_IDENT, TK_COLON, TK_TABLE_VALUE, }, "a: a");
 
     // number continued with alhanumeric
     test_grammar(array { TK_NOTOKEN, }, "123a");

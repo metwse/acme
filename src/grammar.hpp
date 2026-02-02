@@ -22,7 +22,7 @@ class Cfg;  /* defined in rdesc.hpp */
 #include <rdesc/bnf_dsl.h>
 
 /** @brief Total number of tokens. */
-#define TK_COUNT 20
+#define TK_COUNT 21
 
 /** @brief Total number of non-terminals. */
 #define NT_COUNT 13
@@ -33,7 +33,7 @@ class Cfg;  /* defined in rdesc.hpp */
 
 /** @brief Token IDs. */
 enum tk {
-    TK_NOTOKEN,
+    TK_NOTOKEN, TK_EOF,
 
     /* literals */
     TK_NUM, TK_IDENT,
@@ -71,7 +71,7 @@ enum nt {
 
 /** @brief Human-readable token names. */
 const char *const tk_names[TK_COUNT] = {
-    "",
+    "@notoken", "@eof",
 
     "@num", "@ident",
 
@@ -91,7 +91,7 @@ const char *const tk_names[TK_COUNT] = {
 
 /** @brief Token names with symbols escaped for dotlang graph. */
 const char *const tk_names_escaped[TK_COUNT] = {
-    "",
+    "@notoken", "@eof",
 
     "@num", "@ident",
 
@@ -102,7 +102,7 @@ const char *const tk_names_escaped[TK_COUNT] = {
     ",", ":", ";",
     "=",
 
-    "->",
+    "-\\>",
 
     "lut", "wire", "unit",
 

@@ -3,41 +3,36 @@
 #include "../src/lex.hpp"
 #include "../src/detail.hpp"
 
+#include <rdesc/cfg.h>
 #include <rdesc/rdesc.h>
 #include <rdesc/util.h>
 
 #include <cstdio>
-#include <memory>
-#include <sstream>
 #include <string>
 
-using std::shared_ptr;
-using std::stringstream;
+using std::cin;
 using std::string;
 
 
-void test_grammar(shared_ptr<Cfg>cfg, const char *input) {
+int main() {
+    auto cfg = load_grammar();
     auto parser = cfg->new_parser();
 
     parser.start(NT_STMT);
 
-    stringstream ss;
-    ss << input;
-
-    Lex lex { ss };
+    Lex lex { cin };
     struct rdesc_node *out = NULL;
-    for (auto tk = lex.next(); tk.id != TK_NOTOKEN; tk = lex.next())
-        parser.pump(&out, &tk);
+    struct rdesc_cfg_token tk;
+
+    do {
+        tk = lex.next();
+        assert(parser.pump(&out, &tk) != RDESC_NOMATCH,
+               "could not parse grammar");
+    } while (!out);
 
     assert(out, "could not complete CST");
 
     rdesc_dump_dot(out, tk_printer, nt_names, stdout);
 
     rdesc_node_destroy(out, tk_destroyer);
-}
-
-int main() {
-    auto cfg = load_grammar();
-
-    test_grammar(cfg, "lut<2, 1> nand = (0b0111) { _shape: [] };");
 }

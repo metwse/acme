@@ -55,6 +55,13 @@ public:
     /** SAFETY: cannot copy `struct rdesc` safely */
     Rdesc(const Rdesc &) = delete;
 
+    /** SAFETY: move constructor invalidates `struct rdesc` */
+    Rdesc(Rdesc &&other) {
+        other.p = p;
+        other.cfg = cfg;
+        p = (struct rdesc) {};
+    };
+
     ~Rdesc()
         { rdesc_destroy(&p); }
 

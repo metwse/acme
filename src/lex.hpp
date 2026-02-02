@@ -13,7 +13,7 @@
 
 #include <cstddef>
 #include <map>
-#include <istream>
+#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,7 +22,7 @@
 class Lex {
 public:
     Lex(std::istream &s_)
-        : s{ s_.rdbuf() } {}
+        : s { s_.rdbuf() } {}
 
     Lex(const Lex &other) = delete;
 
@@ -33,6 +33,9 @@ public:
     const std::string &ident_name(size_t i) const;
 
 private:
+    template<typename T>
+    friend void operator<<(Lex &lex, T i);
+
     size_t get_ident_id(const std::string &);
 
     char skip_space();
@@ -42,7 +45,7 @@ private:
     struct rdesc_cfg_token lex_punctuation(char c);
     struct rdesc_cfg_token lex_table_value(char c);
 
-    std::istream s;
+    std::iostream s;
     enum tk lookahead = TK_NOTOKEN;
 
     std::map<std::string, size_t> idents;
@@ -85,6 +88,13 @@ public:
 
     std::string value;
 };
+
+
+
+template<typename T>
+void operator<<(Lex &lex, T i) {
+    lex.s << i;
+}
 
 
 #endif
