@@ -14,7 +14,9 @@
 #include <cstddef>
 #include <map>
 #include <istream>
+#include <string>
 #include <utility>
+#include <vector>
 
 
 class Lex {
@@ -28,6 +30,8 @@ public:
 
     struct rdesc_cfg_token next();
 
+    const std::string &ident_name(size_t i) const;
+
 private:
     size_t get_ident_id(const std::string &);
 
@@ -39,9 +43,11 @@ private:
     struct rdesc_cfg_token lex_table_value(char c);
 
     std::istream s;
-    std::map<std::string, size_t> idents;
-    size_t last_ident_id;
     enum tk lookahead = TK_NOTOKEN;
+
+    std::map<std::string, size_t> idents;
+    std::vector<std::string> ident_names;
+    size_t last_ident_id = 0;
 };
 
 class SemInfo {

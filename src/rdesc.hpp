@@ -65,8 +65,8 @@ public:
     void reset(NodeDestroyer destroyer)
         { rdesc_reset(&p, destroyer); }
 
-    void pump(struct rdesc_node **out, struct rdesc_cfg_token *incoming_tk)
-        { rdesc_pump(&p, out, incoming_tk); }
+    auto pump(struct rdesc_node **out, struct rdesc_cfg_token *incoming_tk)
+        { return rdesc_pump(&p, out, incoming_tk); }
 
 private:
     struct rdesc p;

@@ -96,7 +96,7 @@ const char *const tk_names_escaped[TK_COUNT] = {
     "@num", "@ident",
 
     "(", ")",
-    "<", ">",
+    "\\<", "\\>",
     "[", "]",
     "\\{", "\\}",
     ",", ":", ";",
@@ -169,6 +169,10 @@ grammar[NT_COUNT][NT_VARIANT_COUNT][NT_BODY_LENGTH] = {
 
 
 std::shared_ptr<Cfg> load_grammar();
+
+void tk_printer(const struct rdesc_cfg_token *, FILE *out);
+
+void tk_destroyer(struct rdesc_cfg_token *);
 
 
 #endif

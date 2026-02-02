@@ -1,6 +1,7 @@
 #include "lex.hpp"
 #include "grammar.hpp"
 
+#include <cassert>
 #include <rdesc/cfg.h>
 
 #include <cstddef>
@@ -192,11 +193,16 @@ struct rdesc_cfg_token Lex::lex_table_value(char c) {
 }
 
 size_t Lex::get_ident_id(const string &s) {
-    if (idents.contains(s))
-        return idents[s];
+    size_t &id = idents[s];
 
-    auto id = ++last_ident_id;
-    idents.insert({s, id});
+    if (id == 0)
+        id = ++last_ident_id;
 
     return id;
+}
+
+const std::string &Lex::ident_name(size_t i) const {
+    assert(0 < i && i <= last_ident_id);
+
+    return ident_names[i + 1];
 }
