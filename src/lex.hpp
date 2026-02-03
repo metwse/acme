@@ -7,7 +7,6 @@
 #define LEX_HPP
 
 
-#include "core.hpp"
 #include "grammar.hpp"
 
 #include <cstdint>
@@ -68,7 +67,6 @@ public:
 
     virtual ~NumInfo() = default;
 
-    std::unique_ptr<Bitvec> into_bitvec();
     uintmax_t decimal()
         { return strtoumax(num.c_str(), NULL, base); }
 

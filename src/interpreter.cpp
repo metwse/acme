@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 #include <memory>
+#include <stdexcept>
 
 using std::vector;
 using std::unique_ptr;
@@ -36,17 +37,24 @@ static auto get_rrr_seminfo(struct rdesc_node *ls) {
 void Interpreter::interpret_lut(struct rdesc_node &lut) {
     auto nt = lut.nt;
 
-    size_t i = get_seminfo<IdentInfo>(nt.children[2])->id;
-    size_t o = get_seminfo<IdentInfo>(nt.children[4])->id;
+    size_t input_size = get_seminfo<NumInfo>(nt.children[2])->decimal();
+    size_t output_size = get_seminfo<NumInfo>(nt.children[4])->decimal();
     LutId id = get_seminfo<IdentInfo>(nt.children[6])->id;
 
-    /// TODO: lookup table parsing
-    vector<unique_ptr<Bitvec>> bv;
-    get_rrr_seminfo<NumInfo>(nt.children[9]);
+    auto table_ = get_rrr_seminfo<NumInfo>(nt.children[9]);
+    /* end of serialization */
+
+    if (table_.size() != output_size)
+        throw std::length_error("lookup table does not match output size "
+                                "with lut");
+    /* end of validation */
+
+    vector<bool> table;  // TODO: lut parsing
 
     luts.emplace(piecewise_construct,
                  forward_as_tuple(id),
-                 forward_as_tuple(id, i, o, std::move(bv)));
+                 forward_as_tuple(id, input_size, output_size,
+                                  std::move(table)));
 };
 
 void Interpreter::interpret_wire(struct rdesc_node &wire) {
@@ -54,6 +62,8 @@ void Interpreter::interpret_wire(struct rdesc_node &wire) {
 
     WireId id = get_seminfo<IdentInfo>(nt.children[1])->id;
     bool state = get_seminfo<NumInfo>(nt.children[3])->decimal() != 0;
+    /* end of serialization */
+    /* end of validation */
 
     wires.emplace(piecewise_construct,
                   forward_as_tuple(id),
@@ -66,16 +76,49 @@ void Interpreter::interpret_unit(struct rdesc_node &unit) {
     LutId lut_id = get_seminfo<IdentInfo>(nt.children[2])->id;
     LutId id = get_seminfo<IdentInfo>(nt.children[4])->id;
 
-    /// TODO: input/output parsing
-    vector<WireId> i;
-    auto _a = get_rrr_seminfo<IdentInfo>(nt.children[7]);
+    auto input_wires_ = get_rrr_seminfo<IdentInfo>(nt.children[7]);
+    auto output_wires_ = get_rrr_seminfo<IdentInfo>(nt.children[11]);
 
-    vector<WireId> o;
-    auto _b = get_rrr_seminfo<IdentInfo>(nt.children[11]);
+    auto extract_wire_ids = [](const auto &info_list) {
+        vector<WireId> ids;
+        ids.reserve(info_list.size());
+        for (const auto &info : info_list)
+            ids.push_back(info->id);
+        return ids;
+    };
+
+    vector<WireId> input_wires = extract_wire_ids(input_wires_);
+    vector<WireId> output_wires = extract_wire_ids(output_wires_);
+    /* end of serialization */
+
+    auto validate_input_wires = [this](const auto &wire_ids) {
+        for (auto &id : wire_ids)
+            if (!wires.contains(id))
+                throw std::invalid_argument("unknown wire");
+    };
+
+    validate_input_wires(input_wires);
+    validate_input_wires(output_wires);
+
+    if (!luts.contains(lut_id))
+        throw std::invalid_argument("unknown lut");
+
+    auto lut = luts.at(lut_id);
+
+    if (lut.input_size != input_wires.size())
+        throw std::invalid_argument("invalid input wire size");
+    if (lut.output_size != output_wires.size())
+        throw std::invalid_argument("invalid output wire size");
+    /* end of validation */
+
+    for (auto input_wire : input_wires)
+        wires.at(input_wire).affects.insert(id);
 
     units.emplace(piecewise_construct,
                   forward_as_tuple(id),
-                  forward_as_tuple(id, lut_id, i, o));
+                  forward_as_tuple(id, lut_id,
+                                   std::move(input_wires),
+                                   std::move(output_wires)));
 };
 
 enum rdesc_result Interpreter::pump(struct rdesc_cfg_token tk) {

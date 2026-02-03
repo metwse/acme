@@ -10,12 +10,12 @@
 #include "grammar.hpp"
 #include "rdesc.hpp"
 
-#include <cstddef>
-#include <map>
 #include <rdesc/cfg.h>
 #include <rdesc/rdesc.h>
+
+#include <cstddef>
+#include <map>
 #include <set>
-#include <memory>
 #include <vector>
 
 
@@ -24,45 +24,47 @@ typedef size_t UnitId;
 typedef size_t WireId;
 
 
-class Bitvec {
-public:
-    virtual bool get(size_t) = 0;
-};
-
 class Lut {
 public:
-    Lut(LutId id_, size_t i_, size_t o_, auto lut_)
-        : id { id_ }, i { i_ }, o { o_ }, lut { std::move(lut_) } {}
+    Lut(LutId id_, size_t input_size_, size_t output_size_,
+        std::vector<bool> &&lut_)
+        : id { id_ }, input_size { input_size_ }, output_size { output_size_ },
+          lut { std::move(lut_) } {}
 
-    std::vector<bool> lookup(std::vector<bool>);
+    std::vector<bool> lookup(std::vector<bool> &);
 
     LutId id;
-    size_t i;
-    size_t o;
+    size_t input_size;
+    size_t output_size;
 
 private:
-    std::vector<std::unique_ptr<Bitvec>> lut;
+    std::vector<bool> lut;
 };
 
 class Wire {
 public:
     Wire(WireId id_, bool state_)
-        : id { id_ }, state { state_ }, affects {} {}
-
+        : id { id_ }, state { state_ } {}
     WireId id;
     bool state;
-    std::set<UnitId> affects;
+
+    std::set<UnitId> affects {};
 };
 
 class Unit {
 public:
-    Unit(UnitId id_, LutId lut_id_, auto i_, auto o_)
-        : id { id_ }, lut_id { lut_id_ }, i { i_ }, o { o_ } {}
+    Unit(UnitId id_, LutId lut_id_,
+         std::vector<WireId> &&input_wires_,
+         std::vector<WireId> &&output_wires_)
+        : id { id_ }, lut_id { lut_id_ },
+          input_wires { std::move(input_wires_) },
+          output_wires { std::move(output_wires_) } {}
 
     UnitId id;
     LutId lut_id;
-    std::vector<WireId> i;
-    std::vector<WireId> o;
+
+    std::vector<WireId> input_wires;
+    std::vector<WireId> output_wires;
 };
 
 
@@ -79,7 +81,7 @@ public:
     void interpret_unit(struct rdesc_node &);
 
 private:
-    std::map<UnitId, Lut> luts;
+    std::map<LutId, Lut> luts;
     std::map<WireId, Wire> wires;
     std::map<UnitId, Unit> units;
 

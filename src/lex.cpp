@@ -214,7 +214,5 @@ size_t Lex::get_ident_id(const string &s) {
 }
 
 const std::string &Lex::ident_name(size_t i) const {
-    assert(0 < i && i <= last_ident_id, "identifier id out of range");
-
     return ident_names[i + 1];
 }
