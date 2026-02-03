@@ -67,7 +67,7 @@ public:
 
     virtual ~NumInfo() = default;
 
-    uintmax_t decimal()
+    uintmax_t decimal() const
         { return strtoumax(num.c_str(), NULL, base); }
 
     int base;

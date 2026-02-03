@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "detail.h"
 #include "grammar.hpp"
 #include "lex.hpp"
 
@@ -34,6 +35,44 @@ static auto get_rrr_seminfo(struct rdesc_node *ls) {
     return res;
 }
 
+void parse_lut_num_info(vector<bool> &table,
+                        size_t input_variant_count,
+                        const NumInfo &info) {
+    if (info.base == 10) {
+        uintmax_t value = info.decimal();
+        for (size_t i = 0; i < input_variant_count; i++)
+            table.push_back((value >> i) & 1);
+    } else {
+        const std::string &num_str = info.num;
+        size_t bit_index = 0;
+
+        for (auto it = num_str.rbegin();
+             it != num_str.rend() && bit_index < input_variant_count;
+             ++it) {
+            char digit = *it;
+            uintmax_t digit_value;
+
+            if ('0' <= digit && digit <= '9')
+                digit_value = digit - '0';
+            else if ('a' <= digit && digit <= 'f')
+                digit_value = digit - 'a' + 10;
+            else if ('A' <= digit && digit <= 'F')
+                digit_value = digit - 'A' + 10;
+            else
+                unreachable();  // GCOVR_EXCL_LINE
+
+            int bits_per_digit = (info.base == 2) ? 1 : (info.base == 8) ? 3 : 4;
+            for (int b = 0;
+                 b < bits_per_digit && bit_index < input_variant_count;
+                 b++, bit_index++)
+                table.push_back((digit_value >> b) & 1);
+        }
+
+        for (; bit_index < input_variant_count; bit_index++)
+            table.push_back(false);
+    }
+}
+
 void Interpreter::interpret_lut(struct rdesc_node &lut) {
     auto nt = lut.nt;
 
@@ -49,7 +88,11 @@ void Interpreter::interpret_lut(struct rdesc_node &lut) {
                                 "with lut");
     /* end of validation */
 
-    vector<bool> table;  // TODO: lut parsing
+    vector<bool> table;
+    table.reserve((1 << input_size) * output_size);
+
+    for (auto &output_values : table_)
+        parse_lut_num_info(table, 1 << input_size, *output_values);
 
     luts.emplace(piecewise_construct,
                  forward_as_tuple(id),
