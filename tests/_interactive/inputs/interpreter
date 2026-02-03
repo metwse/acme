@@ -1,0 +1,16 @@
+lut<4, 3> adder2 = (
+        0b1110110010000000,
+        0b1001001101101100,
+        0b1010101010101010
+    );
+
+wire b2 = 0;
+wire b1 = 1;
+wire a2 = 0;
+wire a1 = 1;
+
+wire c3 = 0;
+wire c2 = 1;
+wire c1 = 0;
+
+unit<adder2> uut = (b2, b1, a2, a1) -> (c3, c2, c1);

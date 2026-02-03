@@ -200,53 +200,69 @@ enum rdesc_result Interpreter::pump(struct rdesc_cfg_token tk) {
     rdesc.start(NT_STMT);
     return RDESC_READY;
 }
+ostream &operator<<(ostream &os, const Lut &lut) {
+    os << "lut<" << lut.input_size << ", " << lut.output_size << "> l"
+        << lut.id << " = (0b";
+
+    size_t input_variant_count = (1 << lut.input_size);
+    for (size_t i = 0; i < lut.lut.size(); i++) {
+        if (i > 0 && i % input_variant_count == 0)
+            os << ", 0b";
+
+        os << lut.lut[
+            (i / input_variant_count + 1) * input_variant_count -
+            (i % input_variant_count) - 1
+            ];
+    }
+
+    os << ");";
+
+    return os;
+}
+
+ostream &operator<<(ostream &os, const Wire &wire) {
+    os << "wire w" << wire.id << " = " << (wire.state ? "1;" : "0;");
+
+    return os;
+}
+
+ostream &operator<<(ostream &os, const Unit &unit) {
+    os << "unit<l" << unit.lut_id << "> u" << unit.id << " = (";
+
+    for (size_t i = 0; i < unit.input_wires.size(); i++) {
+        if (i > 0)
+            os << ", ";
+
+        os << "w" << unit.input_wires[i];
+    }
+
+    os << ") -> (";
+
+    for (size_t i = 0; i < unit.output_wires.size(); i++) {
+        if (i > 0)
+            os << ", ";
+
+        os << "w" << unit.output_wires[i];
+    }
+
+    os << ");";
+
+    return os;
+}
 
 ostream &operator<<(ostream &os, const Interpreter &intr) {
-    for (auto &it : intr.luts) {
-        os << "lut<" << it.second.input_size << ", " << it.second.output_size
-            << "> l" << it.first << " = (0b";
-
-        size_t input_variant_count = (1 << it.second.input_size);
-        for (size_t i = 0; i < it.second.lut.size(); i++) {
-            if (i > 0 && i % input_variant_count == 0)
-                os << ", ";
-
-            os << it.second.lut[
-                (i / input_variant_count + 1) * input_variant_count -
-                (i % input_variant_count) - 1
-            ];
-        }
-
-        os << ");\n";
-    }
+    for (auto &it : intr.luts)
+        os << it.second << "\n";
 
     os << "\n";
 
-    for (auto &it : intr.wires) {
-        os << "wire w" << it.first << " = "
-            << (it.second.state ? "1;\n" : "0;\n");
-    }
+    for (auto &it : intr.wires)
+        os << it.second << "\n";
 
     os << "\n";
 
-    for (auto &it : intr.units) {
-        os << "unit<l" << it.second.lut_id << "> u" << it.first << " = (";
-
-        for (size_t i = 0; i < it.second.input_wires.size(); i++) {
-            if (i > 0)
-                os << ", ";
-            os << "w" << it.second.input_wires[i];
-        }
-
-        os << ") -> (";
-
-        for (size_t i = 0; i < it.second.output_wires.size(); i++) {
-            if (i > 0)
-                os << ", ";
-            os << "w" << it.second.output_wires[i];
-        }
-        os << ");";
-    }
+    for (auto &it : intr.units)
+        os << it.second << "\n";
 
     return os;
 }

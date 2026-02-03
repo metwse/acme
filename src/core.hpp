@@ -31,13 +31,14 @@ public:
         : id { id_ }, input_size { input_size_ }, output_size { output_size_ },
           lut { std::move(lut_) } {}
 
-    std::vector<bool> lookup(std::vector<bool> &);
-
     LutId id;
     size_t input_size;
     size_t output_size;
 
     std::vector<bool> lut;
+
+private:
+    friend std::ostream &operator<<(std::ostream &, const Lut &);
 };
 
 class Wire {
@@ -48,6 +49,9 @@ public:
     bool state;
 
     std::set<UnitId> affects {};
+
+private:
+    friend std::ostream &operator<<(std::ostream &, const Wire &);
 };
 
 class Unit {
@@ -64,6 +68,9 @@ public:
 
     std::vector<WireId> input_wires;
     std::vector<WireId> output_wires;
+
+private:
+    friend std::ostream &operator<<(std::ostream &, const Unit &);
 };
 
 

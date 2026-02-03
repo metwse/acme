@@ -54,6 +54,7 @@ $(DIST_DIR) $(TEST_OBJ_DIR) $(OBJ_DIR):
 	mkdir -p $@
 
 tests: $(TEST_TARGETS)
+	@echo > /dev/null
 
 all: default tests
 
