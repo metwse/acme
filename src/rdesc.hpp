@@ -8,6 +8,8 @@
 #define RDESC_HPP
 
 
+#include "grammar.hpp"
+
 #include <rdesc/cfg.h>
 #include <rdesc/rdesc.h>
 
@@ -57,14 +59,16 @@ public:
 
     /** SAFETY: move constructor invalidates `struct rdesc` */
     Rdesc(Rdesc &&other) {
-        other.p = p;
-        other.cfg = cfg;
-        destroyed = true;
+        p = other.p;
+        cfg = other.cfg;
+        other.destroyed = true;
     };
 
     ~Rdesc() {
-        if (!destroyed)
+        if (!destroyed) {
+            rdesc_reset(&p, tk_destroyer);
             rdesc_destroy(&p);
+        }
     }
 
     void start(int start_symbol)

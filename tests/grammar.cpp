@@ -7,7 +7,6 @@
 #include <rdesc/rdesc.h>
 #include <rdesc/util.h>
 
-#include <cstdio>
 #include <string>
 
 using std::cin;

@@ -7,11 +7,13 @@
 #define CORE_HPP
 
 
+#include "grammar.hpp"
 #include "rdesc.hpp"
 
 #include <cstddef>
 #include <map>
 #include <rdesc/cfg.h>
+#include <rdesc/rdesc.h>
 #include <set>
 #include <memory>
 #include <vector>
@@ -66,10 +68,11 @@ public:
 
 class Interpreter {
 public:
-    Interpreter(Rdesc rdesc_)
-        : rdesc { std::move(rdesc_) } {};
+    Interpreter(Rdesc &&rdesc_)
+        : rdesc { std::move(rdesc_) }
+        { rdesc.start(NT_STMT); };
 
-    bool pump(struct rdesc_cfg_token tk);
+    enum rdesc_result pump(struct rdesc_cfg_token tk);
 
     void interpret_lut(struct rdesc_node *);
     void interpret_wire(struct rdesc_node *);

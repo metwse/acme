@@ -18,7 +18,7 @@ using std::piecewise_construct, std::forward_as_tuple;
 #define NUM_INFO(TK) reinterpret_cast<NumInfo *>(TK->tk.seminfo)
 
 
-static inline auto collect_rrr(struct rdesc_node *ls) {
+static auto collect_rrr(struct rdesc_node *ls) {
     vector<struct rdesc_node *> res;
 
     while (true) {
@@ -48,8 +48,6 @@ void Interpreter::interpret_lut(struct rdesc_node *lut) {
     luts.emplace(piecewise_construct,
                  forward_as_tuple(id),
                  forward_as_tuple(id, i, o, std::move(bv)));
-
-    rdesc_node_destroy(lut, tk_destroyer);
 };
 
 void Interpreter::interpret_wire(struct rdesc_node *wire) {
@@ -61,8 +59,6 @@ void Interpreter::interpret_wire(struct rdesc_node *wire) {
     wires.emplace(piecewise_construct,
                   forward_as_tuple(id),
                   forward_as_tuple(id, state));
-
-    rdesc_node_destroy(wire, tk_destroyer);
 };
 
 void Interpreter::interpret_unit(struct rdesc_node *unit) {
@@ -81,28 +77,27 @@ void Interpreter::interpret_unit(struct rdesc_node *unit) {
     units.emplace(piecewise_construct,
                   forward_as_tuple(id),
                   forward_as_tuple(id, lut_id, i, o));
-
-    rdesc_node_destroy(unit, tk_destroyer);
 };
 
-bool Interpreter::pump(struct rdesc_cfg_token tk) {
+enum rdesc_result Interpreter::pump(struct rdesc_cfg_token tk) {
     struct rdesc_node *out = NULL;
 
     auto res = rdesc.pump(&out, &tk);
 
     switch (res) {
     case RDESC_CONTINUE:
-        return true;
+        return RDESC_CONTINUE;
     case RDESC_NOMATCH:
         rdesc.reset(tk_destroyer);
-        return false;
+        rdesc.start(NT_STMT);
+        return RDESC_NOMATCH;
     default:
         break;
     }
 
     auto decl = out->nt.children[0];
 
-    switch (out->nt.id) {
+    switch (decl->nt.id) {
     case NT_LUT:
         interpret_lut(decl);
         break;
@@ -110,10 +105,11 @@ bool Interpreter::pump(struct rdesc_cfg_token tk) {
         interpret_wire(decl);
         break;
     case NT_UNIT:
-        interpret_lut(decl);
+        interpret_unit(decl);
         break;
     }
 
     rdesc_node_destroy(out, NULL);
-    return true;
+    rdesc.start(NT_STMT);
+    return RDESC_READY;
 }
