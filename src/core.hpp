@@ -37,7 +37,6 @@ public:
     size_t input_size;
     size_t output_size;
 
-private:
     std::vector<bool> lut;
 };
 
@@ -81,6 +80,8 @@ public:
     void interpret_unit(struct rdesc_node &);
 
 private:
+    friend std::ostream &operator<<(std::ostream &, const Interpreter &);
+
     std::map<LutId, Lut> luts;
     std::map<WireId, Wire> wires;
     std::map<UnitId, Unit> units;

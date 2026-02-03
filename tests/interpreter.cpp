@@ -7,7 +7,7 @@
 #include <string>
 #include <utility>
 
-using std::cin, std::cout, std::endl;
+using std::cin, std::cout, std::endl, std::flush;
 using std::string;
 
 
@@ -18,6 +18,7 @@ int main() {
     Lex lex { cin };
 
     Interpreter intr { std::move(parser) };
+    cout << "> " << flush;
 
     enum rdesc_result res;
     while (true) {
@@ -28,9 +29,9 @@ int main() {
         } while (res == RDESC_CONTINUE);
 
         if (res == RDESC_READY) {
-            cout << "New statement received." << endl;
+            cout << "> " << flush;
         } else {
-            cout << "Terminating due to syntax error" << endl;
+            cout << intr << endl;
             break;
         }
     };
