@@ -74,9 +74,9 @@ public:
 
     enum rdesc_result pump(struct rdesc_cfg_token tk);
 
-    void interpret_lut(struct rdesc_node *);
-    void interpret_wire(struct rdesc_node *);
-    void interpret_unit(struct rdesc_node *);
+    void interpret_lut(struct rdesc_node &);
+    void interpret_wire(struct rdesc_node &);
+    void interpret_unit(struct rdesc_node &);
 
 private:
     std::map<UnitId, Lut> luts;

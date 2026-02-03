@@ -1,6 +1,6 @@
+#include "detail.h"
 #include "lex.hpp"
 #include "grammar.hpp"
-#include "detail.hpp"
 
 #include <rdesc/cfg.h>
 

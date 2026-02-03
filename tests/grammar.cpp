@@ -1,7 +1,7 @@
+#include "../src/detail.h"
 #include "../src/rdesc.hpp"
 #include "../src/grammar.hpp"
 #include "../src/lex.hpp"
-#include "../src/detail.hpp"
 
 #include <rdesc/cfg.h>
 #include <rdesc/rdesc.h>
