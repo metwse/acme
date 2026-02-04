@@ -15,6 +15,7 @@ using std::string;
 
 int main() {
     auto parser = global_cfg()->new_parser();
+    global_cfg();
 
     parser.start(NT_STMT);
 

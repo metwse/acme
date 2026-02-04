@@ -22,7 +22,7 @@ vector<bool> Lut::lookup(const vector<bool> &inputs) const {
     }
 
     return res;
-};
+};  // GCOVR_EXCL_LINE
 
 void Simulation::set_wire_state(WireId id, bool state) {
     bool &current_state = wires.at(id).state;
@@ -42,7 +42,7 @@ void Simulation::advance() {
     for (WireId wire_id : changed_wires_) {
         for (UnitId unit_id : wires.at(wire_id).affects) {
             const Unit &unit = units.at(unit_id);
-            const Lut &lut = luts.at(unit_id);
+            const Lut &lut = luts.at(unit.lut_id);
 
             vector<bool> inputs;
             inputs.reserve(lut.input_size);
@@ -53,7 +53,7 @@ void Simulation::advance() {
             vector<bool> outputs = lut.lookup(inputs);
 
             size_t i = 0;
-            for (WireId output_wire_id : unit.input_wires)
+            for (WireId output_wire_id : unit.output_wires)
                 set_wire_state(output_wire_id, outputs[i++]);
         }
     }

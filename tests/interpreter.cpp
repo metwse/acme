@@ -49,7 +49,7 @@ void tests_should_fail(const char *input) {
             assert(intr.pump(tk) != RDESC_NOMATCH,
                    "syntax error");
 
-        assert(0, "test should be failed");
+        assert(0, "test should be failed");  // GCOVR_EXCL_LINE
     } catch (E &) {}
 }
 
