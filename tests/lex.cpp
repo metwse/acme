@@ -94,14 +94,14 @@ int main() {
 
         TK_EOF,
     }, "lut<2, 1> nand = (0b0111);"
-       "wire a = 1 { a: 1 };"
-       "unit<nand> uut1 = (a, b) -> (c);");
+       "wire a = 1 { a: (1, 2) };"
+       "unit<nand> /*  */uut1 /**/= (a, b) -> (c);");
 
     test_grammar(array {
         TK_IDENT, TK_NUM, TK_NUM, TK_NUM, TK_NUM, TK_NUM, TK_NUM,
 
         TK_EOF,
-    }, " a 0xAa 0o0 0b101011 01 1 0 ");
+    }, " a 0xAa 0o0 0b101011 /*   */01 1 0 /* */");
 
     test_grammar(array {
         TK_LCURLY, TK_IDENT, TK_COLON, TK_TABLE_VALUE, TK_COMMA, TK_IDENT,
@@ -113,7 +113,7 @@ int main() {
     // no table value
     test_grammar(array { TK_IDENT, TK_COLON, TK_NOTOKEN, }, "a: ,");
     test_grammar(array { TK_IDENT, TK_COLON, TK_EOF, }, "a: ");
-    test_grammar(array { TK_IDENT, TK_COLON, TK_TABLE_VALUE, }, "a: a");
+    test_grammar(array { TK_IDENT, TK_COLON, TK_TABLE_VALUE, }, "a: /**/ a");
 
     // number continued with alhanumeric
     test_grammar(array { TK_NOTOKEN, }, "123a");
@@ -130,13 +130,19 @@ int main() {
     // malformed num
     test_grammar(array { TK_NOTOKEN, }, "0x");
 
+    // / should followed by *
+    test_grammar(array { TK_NOTOKEN, }, "/");
+
+    // unterminated comment
+    test_grammar(array { TK_NOTOKEN, }, "/* *");
+
     test_num(array { 10, 10, 10, 10 },
              { "01", "1", "0", "1" },
              "001 01 0 1  ");
 
     test_num(array { 2, 16, 8, 16 },
              { "11", "aA", "0", "1" },
-             " 0b11 0xaA 0o0 0x1");
+             " 0b11 0xaA /* */ 0o0 0x1");
 
     test_table_value(array { "a", "[123]", "[[], 1]", "TEST " },
                      "{ _123: a, _pos: [123], _test: [[], 1], _aa: TEST }");

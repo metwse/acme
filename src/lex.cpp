@@ -31,6 +31,9 @@ struct rdesc_cfg_token Lex::next() {
         }
     }
 
+    if (c == '/')
+        return skip_comment();
+
     if (isdigit(c))
         return lex_num(c);
 
@@ -45,7 +48,27 @@ bool is_breaking(char c) {
         if (c == tk_names[i][0])
             return true;
 
-    return isspace(c);
+    return isspace(c) || c == '/';
+}
+
+struct rdesc_cfg_token Lex::skip_comment() {
+    if (s.peek() != '*') {
+        // syntax error, / should followed by *
+        return { TK_NOTOKEN, nullptr };
+    }
+
+    char c;
+    while (!s.eof()) {
+        c = s.get();
+
+        if (c == '*' && s.peek() == '/') {
+            s.get();
+            return Lex::next();
+        }
+    }
+
+    // syntax error, unterminated comment
+    return { TK_NOTOKEN, nullptr };
 }
 
 char Lex::skip_space() {

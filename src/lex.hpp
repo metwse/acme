@@ -42,6 +42,8 @@ private:
 
     char skip_space();
 
+    struct rdesc_cfg_token skip_comment();
+
     struct rdesc_cfg_token lex_num(char c);
     struct rdesc_cfg_token lex_ident_or_keyword(char c);
     struct rdesc_cfg_token lex_punctuation(char c);
