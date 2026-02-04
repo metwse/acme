@@ -31,14 +31,19 @@ public:
         : id { id_ }, input_size { input_size_ }, output_size { output_size_ },
           lut { std::move(lut_) } {}
 
-    LutId id;
-    size_t input_size;
-    size_t output_size;
+    std::vector<bool> lookup(const std::vector<bool> &) const;
 
-    std::vector<bool> lut;
+    size_t input_variant_count() const
+        { return (1 << input_size); }
+
+    const LutId id;
+    const size_t input_size;
+    const size_t output_size;
 
 private:
     friend std::ostream &operator<<(std::ostream &, const Lut &);
+
+    std::vector<bool> lut;
 };
 
 class Wire {
@@ -63,16 +68,17 @@ public:
           input_wires { std::move(input_wires_) },
           output_wires { std::move(output_wires_) } {}
 
-    UnitId id;
-    LutId lut_id;
+    const UnitId id;
+    const LutId lut_id;
 
-    std::vector<WireId> input_wires;
-    std::vector<WireId> output_wires;
+    const std::vector<WireId> input_wires;
+    const std::vector<WireId> output_wires;
 
 private:
     friend std::ostream &operator<<(std::ostream &, const Unit &);
 };
 
+class Simulation;
 
 class Interpreter {
 public:
@@ -88,6 +94,7 @@ public:
 
 private:
     friend std::ostream &operator<<(std::ostream &, const Interpreter &);
+    friend Simulation;
 
     std::map<LutId, Lut> luts;
     std::map<WireId, Wire> wires;
@@ -97,6 +104,22 @@ private:
 };
 
 class Simulation {
+public:
+    Simulation(Interpreter &intr)
+        : luts { intr.luts }, wires { intr.wires }, units { intr.units } {}
+
+    void set_wire_state(WireId id, bool state);
+
+    void advance();
+
+    void stabilize();
+
+private:
+    const std::map<LutId, Lut> &luts;
+    std::map<WireId, Wire> &wires;
+    const std::map<UnitId, Unit> &units;
+
+    std::set<WireId> changed_wires;
 };
 
 

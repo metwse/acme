@@ -206,7 +206,7 @@ ostream &operator<<(ostream &os, const Lut &lut) {
     os << "lut<" << lut.input_size << ", " << lut.output_size << "> l"
         << lut.id << " = (0b";
 
-    size_t input_variant_count = (1 << lut.input_size);
+    size_t input_variant_count = lut.input_variant_count();
     for (size_t i = 0; i < lut.lut.size(); i++) {
         if (i > 0 && i % input_variant_count == 0)
             os << ", 0b";

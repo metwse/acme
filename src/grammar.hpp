@@ -168,7 +168,7 @@ grammar[NT_COUNT][NT_VARIANT_COUNT][NT_BODY_LENGTH] = {
 };
 
 
-std::shared_ptr<Cfg> load_grammar();
+std::shared_ptr<Cfg> global_cfg();
 
 void tk_printer(const struct rdesc_cfg_token *, FILE *out);
 

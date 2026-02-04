@@ -71,10 +71,10 @@ run_interactive() {
 }
 
 
-for test in $(ls -p tests | grep -v /); do
+for test in $(ls -p tests | grep .cpp); do
     test="${test%.*}"
 
-    if [[ "$test" == "_interactive_"* ]]; then
+    if [[ "$test" == '_interactive_'* ]]; then
         run_interactive $test
     else
         run_test $test

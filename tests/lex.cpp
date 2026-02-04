@@ -16,10 +16,9 @@ template<size_t size>
 void test_grammar(array<enum tk, size> token_ids,
                   const char *input) {
     stringstream ss;
-
     ss << input;
-
     Lex lex { ss };
+
     for (auto token_id : token_ids) {
         auto lex_token = lex.next();
 
@@ -37,10 +36,9 @@ void test_num(array<int, size> base_,
               array<string, size> num_,
               const char *input) {
     stringstream ss;
-
     ss << input;
-
     Lex lex { ss };
+
     for (size_t i = 0; i < size; i++) {
         auto token = lex.next();
 
@@ -61,10 +59,9 @@ template<size_t size>
 void test_table_value(array<const char *, size> table_value_,
                       const char *input) {
     stringstream ss;
-
     ss << input;
-
     Lex lex { ss };
+
     for (size_t i = 0; i < size;) {
         auto token = lex.next();
 

@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    auto grammar = load_grammar();
+    auto grammar = global_cfg();
 
     XInitThreads();
     App app;

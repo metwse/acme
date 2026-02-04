@@ -34,16 +34,18 @@ public:
     ~Cfg()
         { rdesc_cfg_destroy(&cfg); }
 
-    template<typename... Args>
-    static auto create(Args... args)
-        { return std::make_shared<Cfg>(Token {}, args...); }
-
     auto operator*()
         { return &cfg; }
 
     Rdesc new_parser();
 
 private:
+    friend std::shared_ptr<Cfg> global_cfg();
+
+    template<typename... Args>
+    static auto create(Args... args)
+        { return std::make_shared<Cfg>(Token {}, args...); }
+
     struct rdesc_cfg cfg;
 };
 

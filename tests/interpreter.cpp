@@ -14,13 +14,10 @@ using std::stringstream;
 
 
 void test_perfect_grammar(const char *input) {
-    auto cfg = load_grammar();
-    auto parser = cfg->new_parser();
+    auto parser = global_cfg()->new_parser();
 
     stringstream ss;
-
     ss << input;
-
     Lex lex { ss };
 
     Interpreter intr { std::move(parser) };
@@ -31,7 +28,6 @@ void test_perfect_grammar(const char *input) {
                "syntax error");
 
     stringstream intr_dump;
-
     intr_dump << intr;
 
     assert(intr_dump.str() == input, "grammar mismatch");
@@ -39,13 +35,10 @@ void test_perfect_grammar(const char *input) {
 
 template<typename E>
 void tests_should_fail(const char *input) {
-    auto cfg = load_grammar();
-    auto parser = cfg->new_parser();
+    auto parser = global_cfg()->new_parser();
 
     stringstream ss;
-
     ss << input;
-
     Lex lex { ss };
 
     Interpreter intr { std::move(parser) };

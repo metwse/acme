@@ -2,16 +2,28 @@
 #include "lex.hpp"
 #include "rdesc.hpp"
 
-#include <memory>
-
 #include <rdesc/cfg.h>
 
+#include <memory>
 
-std::shared_ptr<Cfg> load_grammar() {
-    return Cfg::create(
-        NT_COUNT, NT_VARIANT_COUNT, NT_BODY_LENGTH,
-        (const rdesc_cfg_symbol *)(grammar)
-    );
+using std::weak_ptr, std::shared_ptr;
+
+
+shared_ptr<Cfg> global_cfg() {
+    static weak_ptr<Cfg> global_cfg;
+
+    if (global_cfg.expired()) {
+        shared_ptr<Cfg> cfg = Cfg::create(
+            NT_COUNT, NT_VARIANT_COUNT, NT_BODY_LENGTH,
+            (const rdesc_cfg_symbol *)(grammar)
+        );
+
+        global_cfg = cfg;
+
+        return shared_ptr(global_cfg);
+    } else {
+        return shared_ptr(global_cfg);
+    }
 }
 
 void tk_printer(const struct rdesc_cfg_token *tk, FILE *out) {
