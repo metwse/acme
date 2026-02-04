@@ -1,11 +1,13 @@
 lut<4, 3> l1 = (0b1110110010000000, 0b1001001101101100, 0b1010101010101010);
+lut<2, 1> l2 = (0b1000);
+lut<2, 1> l3 = (0b0111);
 
-wire w2 = 0;
-wire w3 = 1;
 wire w4 = 0;
 wire w5 = 1;
 wire w6 = 0;
 wire w7 = 1;
 wire w8 = 0;
+wire w9 = 1;
+wire w10 = 0;
 
-unit<l1> u9 = (w2, w3, w4, w5) -> (w6, w7, w8);
+unit<l1> u11 = (w4, w5, w6, w7) -> (w8, w9, w10);

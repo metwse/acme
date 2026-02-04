@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <ostream>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -17,6 +18,7 @@ using std::vector;
 using std::unique_ptr;
 using std::piecewise_construct, std::forward_as_tuple;
 using std::ostream;
+using std::string;
 
 
 template<typename T>
@@ -35,17 +37,17 @@ static auto get_rrr_seminfo(struct rdesc_node *ls) {
     } while (ls->nt.child_count && (ls = ls->nt.children[1]));
 
     return res;
-}
+}  // GCOVR_EXCL_LINE
 
-void parse_lut_num_info(vector<bool> &table,
-                        size_t input_variant_count,
-                        const NumInfo &info) {
+static void parse_lut_num_info(vector<bool> &table,
+                               size_t input_variant_count,
+                               const NumInfo &info) {
     if (info.base == 10) {
         uintmax_t value = info.decimal();
         for (size_t i = 0; i < input_variant_count; i++)
             table.push_back((value >> i) & 1);
     } else {
-        const std::string &num_str = info.num;
+        const string &num_str = info.num;
         size_t bit_index = 0;
 
         for (auto it = num_str.rbegin();
@@ -54,7 +56,7 @@ void parse_lut_num_info(vector<bool> &table,
             char digit = *it;
             uintmax_t digit_value;
 
-            if ('0' <= digit && digit <= '9')
+            if ('0' <= digit && digit <= '9')  // GCOVR_EXCL_LINE: due to gcovr false-negative
                 digit_value = digit - '0';
             else if ('a' <= digit && digit <= 'f')
                 digit_value = digit - 'a' + 10;
@@ -130,7 +132,7 @@ void Interpreter::interpret_unit(struct rdesc_node &unit) {
         for (const auto &info : info_list)
             ids.push_back(info->id);
         return ids;
-    };
+    };  // GCOVR_EXCL_LINE
 
     vector<WireId> input_wires = extract_wire_ids(input_wires_);
     vector<WireId> output_wires = extract_wire_ids(output_wires_);
@@ -151,9 +153,9 @@ void Interpreter::interpret_unit(struct rdesc_node &unit) {
     auto lut = luts.at(lut_id);
 
     if (lut.input_size != input_wires.size())
-        throw std::invalid_argument("invalid input wire size");
+        throw std::length_error("invalid input wire size");
     if (lut.output_size != output_wires.size())
-        throw std::invalid_argument("invalid output wire size");
+        throw std::length_error("invalid output wire size");
     /* end of validation */
 
     for (auto input_wire : input_wires)

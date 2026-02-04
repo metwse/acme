@@ -55,7 +55,7 @@ run_interactive() {
             echo 'PASS'
             PASSED=$((PASSED + 1))
         else
-            echo 'FAIL\n-------- EXPECTED --------'
+            echo -e 'FAIL\n-------- EXPECTED --------'
             echo "$expected"
             echo '--------- ACTUAL ---------'
             echo "$actual"

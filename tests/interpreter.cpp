@@ -5,6 +5,7 @@
 #include <rdesc/rdesc.h>
 
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -36,6 +37,29 @@ void test_perfect_grammar(const char *input) {
     assert(intr_dump.str() == input, "grammar mismatch");
 }
 
+template<typename E>
+void tests_should_fail(const char *input) {
+    auto cfg = load_grammar();
+    auto parser = cfg->new_parser();
+
+    stringstream ss;
+
+    ss << input;
+
+    Lex lex { ss };
+
+    Interpreter intr { std::move(parser) };
+
+    try {
+        struct rdesc_cfg_token tk;
+        while ((tk = lex.next()).id != TK_EOF)
+            assert(intr.pump(tk) != RDESC_NOMATCH,
+                   "syntax error");
+
+        assert(0, "test should be failed");
+    } catch (E &) {}
+}
+
 int main() {
     test_perfect_grammar(
         /* and gate */
@@ -61,5 +85,29 @@ int main() {
         "wire w8 = 0;\n"
         "\n"
         "unit<l1> u9 = (w2, w3, w4, w5) -> (w6, w7, w8);\n"
+    );
+
+    tests_should_fail<std::length_error>(
+        "lut<2, 1> and = (0b111, 0);"
+    );
+
+    tests_should_fail<std::invalid_argument>(
+        "lut<1, 1> buf = (1);"
+        "unit<buf> a = (unknown_wire_1) -> (unknown_wire_2);"
+    );
+
+    tests_should_fail<std::invalid_argument>(
+        "wire a = 1; wire b = 2;"
+        "unit<unknown_lut> a = (a) -> (b);"
+    );
+
+    tests_should_fail<std::length_error>(
+        "lut<2, 1> and = (8); wire a = 1; wire b = 1;"
+        "unit<and> unt = (a) -> (b);"
+    );
+
+    tests_should_fail<std::length_error>(
+        "lut<2, 1> and = (8); wire a = 1; wire b = 0; wire c = 0; wire d = 0;"
+        "unit<and> unt = (a, b) -> (c, d);"
     );
 }
