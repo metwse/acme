@@ -44,9 +44,6 @@ static auto get_rrr_seminfo(struct rdesc_node *ls) {
 }  // GCOVR_EXCL_LINE
 
 Table::Table(struct rdesc_node *n) {
-    if (n->nt.id != NT_OPTTABLE)
-        throw std::invalid_argument("expected NT_OPTTABLE");
-
     if (n->nt.child_count == 0)
         return;
 
@@ -56,10 +53,9 @@ Table::Table(struct rdesc_node *n) {
         auto table_entry = ls->nt.children[0];
         TableKeyId table_key_id = \
             get_seminfo<IdentInfo>(table_entry->nt.children[0])->id;
-        auto table_value_info = \
-            get_seminfo<TableValueInfo>(table_entry->nt.children[2]);
+        auto table_value = std::make_unique<TableValue>(); // TODO: (table_entry->nt.children[2]);
 
-        table.emplace(table_key_id, std::move(table_value_info));
+        table.emplace(table_key_id, std::move(table_value));
 
         ls = ls->nt.children[1];
 
@@ -209,7 +205,7 @@ enum rdesc_result Interpreter::pump(struct rdesc_cfg_token tk) {
         return RDESC_CONTINUE;
     case RDESC_NOMATCH:
         rdesc.reset(tk_destroyer);
-        rdesc.start(NT_STMT);
+        rdesc.start(START_SYM);
         return RDESC_NOMATCH;
     default:
         break;
@@ -231,12 +227,12 @@ enum rdesc_result Interpreter::pump(struct rdesc_cfg_token tk) {
         }
     } catch (...) {
         rdesc_node_destroy(cst, NULL);
-        rdesc.start(NT_STMT);
+        rdesc.start(START_SYM);
         throw;
     }
 
     rdesc_node_destroy(cst, NULL);
-    rdesc.start(NT_STMT);
+    rdesc.start(START_SYM);
     return RDESC_READY;
 }
 ostream &operator<<(ostream &os, const Lut &lut) {

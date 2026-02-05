@@ -8,8 +8,6 @@
 #define TABLE_HPP
 
 
-#include "lex.hpp"
-
 #include <map>
 #include <memory>
 
@@ -17,12 +15,17 @@
 typedef size_t TableKeyId;
 
 
+class TableValue {
+public:
+};
+
+
 class Table {
 public:
     Table(struct rdesc_node *);
 
 private:
-    std::map<TableKeyId, std::unique_ptr<TableValueInfo>> table;
+    std::map<TableKeyId, std::unique_ptr<TableValue>> table;
 };
 
 

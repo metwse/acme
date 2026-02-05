@@ -22,10 +22,10 @@ class Cfg;  /* defined in rdesc.hpp */
 #include <rdesc/bnf_dsl.h>
 
 /** @brief Total number of tokens. */
-#define TK_COUNT 21
+#define TK_COUNT 20
 
 /** @brief Total number of non-terminals. */
-#define NT_COUNT 13
+#define NT_COUNT 19
 /** @brief Maximum number of variants in a non-terminal. */
 #define NT_VARIANT_COUNT 5
 /** @brief Maximum number of production symbols in a rule. */
@@ -51,9 +51,6 @@ enum tk {
 
     /* keywords and reserved names */
     TK_LUT, TK_WIRE, TK_UNIT,
-
-    /* tokentree for table values */
-    TK_TABLE_VALUE,
 };
 
 /** @brief Non-terminal IDs. */
@@ -67,6 +64,10 @@ enum nt {
 
     NT_TABLE, NT_OPTTABLE,
     NT_TABLE_ENTRY, NT_TABLE_ENTRY_LS, NT_TABLE_ENTRY_LS_REST,
+
+    NT_TABLE_VALUE,
+    NT_TV_POINT, NT_TV_POINT_LS, NT_TV_POINT_LS_REST,
+    NT_TV_POINT_LS_DELIM, NT_TV_PATH,
 };
 
 /** @brief Human-readable token names. */
@@ -85,8 +86,6 @@ const char *const tk_names[TK_COUNT] = {
     "->",
 
     "lut", "wire", "unit",
-
-    "@table_value"
 };
 
 /** @brief Token names with symbols escaped for dotlang graph. */
@@ -105,8 +104,6 @@ const char *const tk_names_escaped[TK_COUNT] = {
     "-\\>",
 
     "lut", "wire", "unit",
-
-    "@table_value"
 };
 
 /** @brief non-terminal names (for debugging/printing CST) */
@@ -119,6 +116,10 @@ const char *const nt_names[NT_COUNT] = {
 
     "table", "opttable",
     "table_entry", "table_entry_ls", "table_entry_ls_rest",
+
+    "nt_table_value",
+    "nt_tv_point", "nt_tv_point_ls", "nt_tv_point_ls_rest",
+    "nt_tv_point_ls_delim", "nt_tv_path",
 };
 
 /** @brief Context-free grammar. */
@@ -150,21 +151,41 @@ grammar[NT_COUNT][NT_VARIANT_COUNT][NT_BODY_LENGTH] = {
     ),
 
     /* <num_ls> ::= */
-    rrr(NUM_LS, TK(NUM), TK(COMMA)),
+        rrr(NUM_LS, TK(NUM), TK(COMMA)),
 
     /* <ident_ls> ::= */
-    rrr(IDENT_LS, TK(IDENT), TK(COMMA)),
+        rrr(IDENT_LS, TK(IDENT), TK(COMMA)),
 
     /* <table> ::= */ r(
         TK(LCURLY), NT(TABLE_ENTRY_LS), TK(RCURLY),
     ),
     /* <opttable> ::= */
-    ropt(NT(TABLE)),
+        ropt(NT(TABLE)),
     /* <table_entry> ::= */ r(
-        TK(IDENT), TK(COLON), TK(TABLE_VALUE),
+        TK(IDENT), TK(COLON), NT(TABLE_VALUE),
     ),
     /* <table_entry_ls> ::= */
-    rrr(TABLE_ENTRY_LS, NT(TABLE_ENTRY), TK(COMMA)),
+        rrr(TABLE_ENTRY_LS, NT(TABLE_ENTRY), TK(COMMA)),
+
+    /* <table_value> ::= */ r(
+        TK(NUM),
+    alt NT(TV_POINT),
+    alt NT(TV_PATH),
+    ),
+
+    /* <tv_point> ::= */ r(
+        TK(IDENT),
+    alt TK(LPAREN), TK(NUM), TK(COMMA), TK(NUM), TK(RPAREN),
+    ),
+    /* <tv_point_ls> ::= */
+        rrr(TV_POINT_LS, NT(TV_POINT), NT(TV_POINT_LS_DELIM)),
+    /* <tv_point_ls_delim> ::= */ r(
+        TK(COMMA),
+    alt TK(SEMI),
+    ),
+    /* <tv_path> ::= */ r(
+        TK(LBRACKET), NT(TV_POINT_LS), TK(RBRACKET),
+    )
 };
 
 

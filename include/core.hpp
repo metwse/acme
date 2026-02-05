@@ -87,7 +87,7 @@ class Interpreter {
 public:
     Interpreter(Rdesc &&rdesc_)
         : rdesc { std::move(rdesc_) }
-        { rdesc.start(NT_STMT); };
+        { rdesc.start(START_SYM); };
 
     enum rdesc_result pump(struct rdesc_cfg_token tk);
 
@@ -102,6 +102,8 @@ private:
     std::map<LutId, Lut> luts;
     std::map<WireId, Wire> wires;
     std::map<UnitId, Unit> units;
+
+    static const enum nt START_SYM = NT_STMT;
 
     Rdesc rdesc;
 };

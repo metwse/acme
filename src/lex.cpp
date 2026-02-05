@@ -19,18 +19,6 @@ struct rdesc_cfg_token Lex::next() {
     if (isspace(c) || s.eof())
         return { TK_EOF, nullptr };
 
-    if (lookahead != TK_NOTOKEN) {
-        auto lookahead_ = lookahead;
-        lookahead = TK_NOTOKEN;
-
-        switch (lookahead_) {
-        case TK_COLON:
-            return lex_table_value(c);
-        default:
-            break;
-        }
-    }
-
     if (c == '/')
         return skip_comment();
 
@@ -184,47 +172,6 @@ struct rdesc_cfg_token Lex::lex_ident_or_keyword(char c) {
         // syntax error, invalid token just after the identifier
         return { TK_NOTOKEN, nullptr };
     }
-}
-
-struct rdesc_cfg_token Lex::lex_table_value(char c) {
-    if (c == ',' || c == '}') {
-        // syntax error, no table value
-        return { TK_NOTOKEN, nullptr };
-    }
-
-    size_t bracket_depth = 0;
-    size_t paren_depth = 0;
-    string table_value;
-
-    while (
-        !(bracket_depth == 0 && paren_depth == 0 && (c == ',' || c == '}'))
-        && !s.eof()
-    ) {
-        switch (c) {
-        case '[':
-            bracket_depth++;
-            break;
-        case ']':
-            bracket_depth--;
-            break;
-        case '(':
-            paren_depth++;
-            break;
-        case ')':
-            paren_depth--;
-            break;
-        }
-
-        table_value += c;
-        c = s.get();
-    }
-
-    if (!s.eof())
-        s.unget();
-
-    auto *seminfo = new TableValueInfo { table_value };
-
-    return { TK_TABLE_VALUE, seminfo };
 }
 
 size_t Lex::get_ident_id(const string &s) {
