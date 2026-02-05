@@ -7,7 +7,7 @@
 #define CORE_HPP
 
 
-#include "grammar.hpp"
+#include "table.hpp"
 #include "rdesc.hpp"
 
 #include <rdesc/cfg.h>
@@ -24,11 +24,12 @@ typedef size_t UnitId;
 typedef size_t WireId;
 
 
-class Lut {
+class Lut : public Table {
 public:
-    Lut(LutId id_, size_t input_size_, size_t output_size_,
+    Lut(auto table, LutId id_, size_t input_size_, size_t output_size_,
         std::vector<bool> &&lut_)
-        : id { id_ }, input_size { input_size_ }, output_size { output_size_ },
+        : Table { table },
+          id { id_ }, input_size { input_size_ }, output_size { output_size_ },
           lut { std::move(lut_) } {}
 
     std::vector<bool> lookup(const std::vector<bool> &) const;
@@ -46,10 +47,11 @@ private:
     std::vector<bool> lut;
 };
 
-class Wire {
+class Wire : public Table {
 public:
-    Wire(WireId id_, bool state_)
-        : id { id_ }, state { state_ } {}
+    Wire(auto table, WireId id_, bool state_)
+        : Table { table },
+          id { id_ }, state { state_ } {}
     WireId id;
     bool state;
 
@@ -59,12 +61,13 @@ private:
     friend std::ostream &operator<<(std::ostream &, const Wire &);
 };
 
-class Unit {
+class Unit : public Table {
 public:
-    Unit(UnitId id_, LutId lut_id_,
+    Unit(auto table, UnitId id_, LutId lut_id_,
          std::vector<WireId> &&input_wires_,
          std::vector<WireId> &&output_wires_)
-        : id { id_ }, lut_id { lut_id_ },
+        : Table { table },
+          id { id_ }, lut_id { lut_id_ },
           input_wires { std::move(input_wires_) },
           output_wires { std::move(output_wires_) } {}
 
