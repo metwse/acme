@@ -1,5 +1,5 @@
-#include "Xapp.hpp"
-#include "grammar.hpp"
+#include "../include/Xapp.hpp"
+#include "../include/grammar.hpp"
 
 #include <X11/Xlib.h>
 

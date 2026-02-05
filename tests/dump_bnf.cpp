@@ -1,7 +1,7 @@
+#include "../include/grammar.hpp"
+
 #include <rdesc/cfg.h>
 #include <rdesc/util.h>
-
-#include "../src/grammar.hpp"
 
 
 int main()

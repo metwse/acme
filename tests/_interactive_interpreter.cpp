@@ -1,5 +1,5 @@
-#include "../src/core.hpp"
-#include "../src/lex.hpp"
+#include "../include/core.hpp"
+#include "../include/lex.hpp"
 
 #include <rdesc/rdesc.h>
 

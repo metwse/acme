@@ -1,6 +1,6 @@
+#include "../include/lex.hpp"
+#include "../include/grammar.hpp"
 #include "../src/detail.h"
-#include "../src/lex.hpp"
-#include "../src/grammar.hpp"
 
 #include <array>
 #include <string>

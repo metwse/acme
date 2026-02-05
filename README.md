@@ -19,21 +19,21 @@ building in debug mode.
 - `libresc` with `stack`, `dump_dot`, and `dump_bnf` features (check out its
   [repo](https://github.com/metwse/rdesc) for building documentation)
 
-## Future Plans
+## Syntax Overview
 ```rs
 lut<2, 1> nand = (0b0111)
 {
-    prop_delay: 1,
+    prop_delay: 1, /* not implemented */
     _shape: [(0, 0), (3, 0), (4, 1)...],
-    _input_port_pos: [(0, 2), (0, 4)],
-    _out_port_pos: [(5, 3)]
+    _input: [(0, 2), (0, 4)],
+    _output: [(5, 3)]
 }; /* properties starting with '_' are metadata fields and ignored by the
       simulation engine */
 
 
-wire a = 1 { _pos: [(5, 12), uut1] }; /* wires require initial state */
-wire b = 0 { _pos: [(5, 14), uut1] };
-wire c = 1 { _pos: [uut1, (10, 13)] };
+wire a = 1 { _path: [(5, 12), uut1] }; /* wires require initial state */
+wire b = 0 { _path: [(5, 14), uut1] };
+wire c = 1 { _path: [uut1, (10, 13)] };
 
 
 unit<nand> uut1 = (a, b) -> (c) { _pos: (10, 10) };

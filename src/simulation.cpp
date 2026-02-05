@@ -1,4 +1,4 @@
-#include "core.hpp"
+#include "../include/core.hpp"
 
 #include <set>
 #include <vector>

@@ -1,6 +1,6 @@
+#include "../include/core.hpp"
+#include "../include/lex.hpp"
 #include "../src/detail.h"  // IWYU pragma: keep
-#include "../src/core.hpp"
-#include "../src/lex.hpp"
 
 #include <rdesc/rdesc.h>
 
