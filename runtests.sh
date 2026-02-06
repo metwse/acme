@@ -45,9 +45,10 @@ run_interactive() {
     fi
 
     actual=$($VALGRIND "$binary" < "tests/_interactive/inputs/$base" 2>&1)
-    actual_trimmed=$(echo "$actual" | xargs echo -n)
+    status=$?
 
-    if [ -f "tests/_interactive/outputs/$base" ]; then
+    if [ -f "tests/_interactive/outputs/$base" ] && [[ -z "$VALGRIND" ]]; then
+        actual_trimmed=$(echo "$actual" | xargs echo -n)
         expected=$(cat "tests/_interactive/outputs/$base")
         expected_trimmed=$(echo "$expected" | xargs echo -n)
 
@@ -61,11 +62,12 @@ run_interactive() {
             echo "$actual"
         fi
     else
-        if [ $? -eq 0 ]; then
+        if [ $status -eq 0 ]; then
             echo 'PASS'
             PASSED=$((PASSED + 1))
         else
             echo 'FAIL'
+            echo "$actual"
         fi
     fi
 }

@@ -1,8 +1,8 @@
+#include "../include/interpreter.hpp"
 #include "../include/core.hpp"
 #include "../include/lex.hpp"
 #include "../src/detail.h"  // IWYU pragma: keep
 
-#include <iostream>
 #include <rdesc/rdesc.h>
 
 #include <sstream>
@@ -53,6 +53,4 @@ int main() {
 
     sim.set_wire_state(10, 1);
     sim.stabilize();
-
-    std::cout<<intr;
 }

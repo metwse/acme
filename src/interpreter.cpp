@@ -30,7 +30,7 @@ static auto get_rrr_ident_id(struct rdesc_node *ls) {
     });
 
     return res;
-}
+}  // GCOVR_EXCL_LINE
 
 
 TVNum::TVNum(struct rdesc_node &num)
@@ -49,8 +49,7 @@ static unique_ptr<TVPoint> interpret_tvpoint(struct rdesc_node &point) {
         return make_unique<TVPointIdent>(point);
     case 1: /* num, num */
         return make_unique<TVPointNum>(point);
-    default:
-        unreachable();  // GCOVR_EXCL_LINE
+    default: unreachable();  // GCOVR_EXCL_LINE
     }
 }
 
@@ -77,8 +76,7 @@ unique_ptr<TableValue> Interpreter::interpret_table_value(struct rdesc_node &tv)
         return interpret_tvpoint(child);
     case 2: /* tv_path */
         return make_unique<TVPath>(child);
-    default:
-        unreachable();  // GCOVR_EXCL_LINE
+    default: unreachable();  // GCOVR_EXCL_LINE
     }
 }
 

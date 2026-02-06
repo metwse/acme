@@ -17,6 +17,8 @@
 #include <ostream>
 #include <set>
 
+class Lex;
+
 
 class Simulation;
 
@@ -36,8 +38,9 @@ public:
     Table interpret_table(struct rdesc_node &);
     std::unique_ptr<TableValue> interpret_table_value(struct rdesc_node &);
 
+    std::ostream &dump(std::ostream &os, const Lex &lex) const;
+
 private:
-    friend std::ostream &operator<<(std::ostream &, const Interpreter &);
     friend Simulation;
 
     std::map<LutId, Lut> luts;

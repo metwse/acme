@@ -177,12 +177,15 @@ struct rdesc_cfg_token Lex::lex_ident_or_keyword(char c) {
 size_t Lex::get_ident_id(const string &s) {
     size_t &id = idents[s];
 
-    if (id == 0)
+    if (id == 0) {
         id = ++last_ident_id;
+
+        ident_names.push_back(s);
+    }
 
     return id;
 }
 
 const std::string &Lex::ident_name(size_t i) const {
-    return ident_names[i + 1];
+    return ident_names[i - 1];
 }

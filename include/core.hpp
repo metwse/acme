@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+class Lex;
+
 
 /** @brief New-type pattern for lookup table identifiers. */
 typedef size_t LutId;
@@ -36,6 +38,8 @@ public:
 
     std::vector<bool> lookup(const std::vector<bool> &) const;
 
+    std::ostream &dump(std::ostream &os, const Lex &lex) const;
+
     size_t input_variant_count() const
         { return (1 << input_size); }
 
@@ -46,8 +50,6 @@ public:
     const size_t output_size;
 
 private:
-    friend std::ostream &operator<<(std::ostream &, const Lut &);
-
     std::vector<bool> lut;
 };
 
@@ -58,15 +60,14 @@ public:
         : table { std::move(table) },
           id { id_ }, state { state_ } {}
 
+    std::ostream &dump(std::ostream &os, const Lex &lex) const;
+
     const Table table;
 
     const WireId id;
     bool state;
 
     std::set<UnitId> affects {};
-
-private:
-    friend std::ostream &operator<<(std::ostream &, const Wire &);
 };
 
 /** @brief Pyhsical logic elements in the simulation. */
@@ -80,6 +81,8 @@ public:
           input_wires { std::move(input_wires_) },
           output_wires { std::move(output_wires_) } {}
 
+    std::ostream &dump(std::ostream &os, const Lex &lex) const;
+
     const Table table;
 
     const UnitId id;
@@ -87,9 +90,6 @@ public:
 
     const std::vector<WireId> input_wires;
     const std::vector<WireId> output_wires;
-
-private:
-    friend std::ostream &operator<<(std::ostream &, const Unit &);
 };
 
 

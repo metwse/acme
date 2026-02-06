@@ -8,6 +8,8 @@
 #define TABLE_HPP
 
 
+#include "lex.hpp"
+
 #include <map>
 #include <memory>
 #include <utility>
@@ -22,10 +24,7 @@ class TableValue {
 public:
     virtual ~TableValue() = default;
 
-    virtual std::ostream &print(std::ostream &os) const = 0;
-
-    friend std::ostream &operator<<(std::ostream &stream, const TableValue &tv)
-        { return tv.print(stream); }
+    virtual std::ostream &dump(std::ostream &os, const Lex &lex) const = 0;
 };
 
 /** @brief Decimal table value. */
@@ -35,7 +34,8 @@ public:
 
     virtual ~TVNum() = default;
 
-    std::ostream &print(std::ostream &os) const override
+    std::ostream &dump(std::ostream &os,
+                       [[maybe_unused]] const Lex &lex) const override
         { os << decimal; return os; }
 
     size_t decimal;
@@ -57,8 +57,8 @@ public:
 
     virtual ~TVPointIdent() = default;
 
-    std::ostream &print(std::ostream &os) const override
-        { os << "i" << id; return os; }
+    std::ostream &dump(std::ostream &os, const Lex &lex) const override
+        { os << lex.ident_name(id) << " /*i" << id << "*/"; return os; }
 
     size_t id;
 };
@@ -70,7 +70,8 @@ public:
 
     virtual ~TVPointNum() = default;
 
-    std::ostream &print(std::ostream &os) const override
+    std::ostream &dump(std::ostream &os,
+                       [[maybe_unused]] const Lex &lex) const override
         { os << "(" << x << ", " << y << ")"; return os; }
 
     size_t x;
@@ -84,7 +85,7 @@ public:
 
     virtual ~TVPath() = default;
 
-    std::ostream &print(std::ostream &os) const override {
+    std::ostream &dump(std::ostream &os, const Lex &lex) const override {
         os << "[";
 
         size_t j = 0;
@@ -92,7 +93,7 @@ public:
             size_t i = 0;
             for (auto &point_ : path) {
                 TableValue *point = point_.get();
-                os << *point;
+                point->dump(os, lex);
 
                 if (i != path.size() - 1)
                     os << ", ";
@@ -123,9 +124,9 @@ public:
     Table(Table &&other)
         : table { std::move(other.table)} {}
 
-private:
-    friend std::ostream &operator<<(std::ostream &, const Table &);
+    std::ostream &dump(std::ostream &os, const Lex &lex) const;
 
+private:
     std::map<TableKeyId, std::unique_ptr<TableValue>> table;
 };
 

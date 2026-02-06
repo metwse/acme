@@ -42,4 +42,4 @@ static auto get_rrr_seminfo(struct rdesc_node *ls) {
     });
 
     return res;
-}
+}  // GCOVR_EXCL_LINE

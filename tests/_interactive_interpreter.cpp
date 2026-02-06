@@ -1,3 +1,4 @@
+#include "../include/interpreter.hpp"
 #include "../include/core.hpp"
 #include "../include/lex.hpp"
 
@@ -27,7 +28,7 @@ int main() {
         } while (res == RDESC_CONTINUE);
 
         if (res == RDESC_NOMATCH) {
-            cout << intr;
+            intr.dump(cout, lex);
             break;
         }
     };
