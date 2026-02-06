@@ -31,8 +31,12 @@
 	assert(c, "logic error: " fmt " is/are not meaningful" \
 	       __VA_OPT__(,)__VA_ARGS__)
 
-/* code reached unreachable branch */
-#define unreachable() assert(0, "reached unreachable branch")
-
+#if defined(__GNUC__) || defined(__clang__)
+    #define unreachable() __builtin_unreachable()
+#elif defined(_MSC_VER)
+    #define unreachable() __assume(false)
+#else
+    #define unreachable()
+#endif
 
 #endif

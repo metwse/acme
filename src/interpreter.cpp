@@ -4,11 +4,12 @@
 #include "../include/table.hpp"
 #include "detail.h"
 
+#include "interpreter.ixx"
+
 #include <rdesc/cfg.h>
 #include <rdesc/rdesc.h>
 
 #include <memory>
-#include <ostream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -17,43 +18,30 @@
 
 using std::vector, std::map;
 using std::unique_ptr, std::make_unique;
-using std::ostream;
 using std::string;
 using std::piecewise_construct, std::forward_as_tuple;
 
 
-template<typename T>
-static inline auto get_seminfo(struct rdesc_node *tk) {
-    return unique_ptr<T>(static_cast<T *>(tk->tk.seminfo));
-}
+static auto get_rrr_ident_id(struct rdesc_node *ls) {
+    vector<size_t> res;
 
-template<typename T>
-static auto get_rrr_seminfo(struct rdesc_node *ls) {
-    vector<unique_ptr<T>> res;
-
-    while (true) {
-        res.push_back(get_seminfo<T>(ls->nt.children[0]));
-
-        ls = ls->nt.children[1];
-
-        if (ls->nt.child_count == 0)
-            break;
-
-        ls = ls->nt.children[1];
-    }
+    traverse_rrr_list(ls, [&](auto *entry) {
+        res.push_back(get_seminfo<IdentInfo>(entry)->id);
+    });
 
     return res;
-}  // GCOVR_EXCL_LINE
+}
+
 
 TVNum::TVNum(struct rdesc_node &num)
-    : numinfo { get_seminfo<NumInfo>(&num) } {}
+    : decimal { get_seminfo<NumInfo>(&num)->decimal() } {}
 
 TVPointIdent::TVPointIdent(struct rdesc_node &point)
-    : ident { get_seminfo<IdentInfo>(point.nt.children[0]) } {}
+    : id { get_seminfo<IdentInfo>(point.nt.children[0])->id } {}
 
 TVPointNum::TVPointNum(struct rdesc_node &num)
-    : num { get_seminfo<NumInfo>(num.nt.children[1]),
-            get_seminfo<NumInfo>(num.nt.children[3]) } {}
+    : x { get_seminfo<NumInfo>(num.nt.children[1])->decimal() },
+      y { get_seminfo<NumInfo>(num.nt.children[3])->decimal() } {}
 
 static unique_ptr<TVPoint> interpret_tvpoint(struct rdesc_node &point) {
     switch (point.nt.variant) {
@@ -62,23 +50,22 @@ static unique_ptr<TVPoint> interpret_tvpoint(struct rdesc_node &point) {
     case 1: /* num, num */
         return make_unique<TVPointNum>(point);
     default:
-        throw;  // GCOVR_EXCL_LINE: unreachable
+        unreachable();  // GCOVR_EXCL_LINE
     }
 }
 
 TVPath::TVPath(struct rdesc_node &path_ls) {
-    auto ls = path_ls.nt.children[1];
+    paths.push_back({});
+    size_t i = 0;
 
-    while (true) {
-        path.push_back(interpret_tvpoint(*ls->nt.children[0]));
+    traverse_rrr_list(path_ls.nt.children[1], [&](auto *entry, auto *delim) {
+        paths[i].push_back(interpret_tvpoint(*entry));
 
-        ls = ls->nt.children[1];
-
-        if (ls->nt.child_count == 0)
-            break;
-
-        ls = ls->nt.children[1];
-    }
+        if (delim && delim->nt.children[0]->tk.id == TK_SEMI) {
+            paths.push_back({});
+            i++;
+        }
+    });
 }
 
 unique_ptr<TableValue> Interpreter::interpret_table_value(struct rdesc_node &tv) {
@@ -91,7 +78,7 @@ unique_ptr<TableValue> Interpreter::interpret_table_value(struct rdesc_node &tv)
     case 2: /* tv_path */
         return make_unique<TVPath>(child);
     default:
-        throw;  // GCOVR_EXCL_LINE: unreachable
+        unreachable();  // GCOVR_EXCL_LINE
     }
 }
 
@@ -103,23 +90,17 @@ Table Interpreter::interpret_table(struct rdesc_node &n) {
 
     auto ls = n.nt.children[0]->nt.children[1];
 
+    traverse_rrr_list(ls, [&](auto *entry) {
+        TableKeyId key = get_seminfo<IdentInfo>(entry->nt.children[0])->id;
 
-    while (true) {
-        auto table_entry = ls->nt.children[0];
-        TableKeyId table_key_id = \
-            get_seminfo<IdentInfo>(table_entry->nt.children[0])->id;
-        auto table_value = interpret_table_value(*table_entry->nt.children[2]);
+        table.emplace(
+            piecewise_construct,
+            forward_as_tuple(key),
+            forward_as_tuple(interpret_table_value(*entry->nt.children[2]))
+        );
+    });
 
-        table.emplace(table_key_id, std::move(table_value));
 
-        ls = ls->nt.children[1];
-
-        if (ls->nt.child_count == 0)
-            break;
-
-        ls = ls->nt.children[1];
-    }
-;
     return Table { std::move(table) };
 }
 
@@ -138,9 +119,9 @@ static void parse_lut_num_info(vector<bool> &table,
              it != num_str.rend() && bit_index < input_variant_count;
              ++it) {
             char digit = *it;
-            uintmax_t digit_value;
+            uintmax_t digit_value = 0;
 
-            if ('0' <= digit && digit <= '9')  // GCOVR_EXCL_LINE: due to gcovr false-negative
+            if ('0' <= digit && digit <= '9')
                 digit_value = digit - '0';
             else if ('a' <= digit && digit <= 'f')
                 digit_value = digit - 'a' + 10;
@@ -182,13 +163,15 @@ void Interpreter::interpret_lut(struct rdesc_node &lut) {
     for (auto &output_values : lookup_table_)
         parse_lut_num_info(lookup_table, 1 << input_size, *output_values);
 
-    luts.emplace(piecewise_construct,
-                 forward_as_tuple(id),
-                 forward_as_tuple(
-                     interpret_table(*nt.children[11]),
-                     id, input_size, output_size,
-                     std::move(lookup_table)
-                 ));
+    luts.emplace(
+        piecewise_construct,
+        forward_as_tuple(id),
+        forward_as_tuple(
+            interpret_table(*nt.children[11]),
+            id, input_size, output_size,
+            std::move(lookup_table)
+        )
+    );
 };
 
 void Interpreter::interpret_wire(struct rdesc_node &wire) {
@@ -199,11 +182,13 @@ void Interpreter::interpret_wire(struct rdesc_node &wire) {
     /* end of serialization */
     /* end of validation */
 
-    wires.emplace(piecewise_construct,
-                  forward_as_tuple(id),
-                  forward_as_tuple(
-                      interpret_table(*nt.children[4]), id, state
-                  ));
+    wires.emplace(
+        piecewise_construct,
+        forward_as_tuple(id),
+        forward_as_tuple(
+            interpret_table(*nt.children[4]), id, state
+        )
+    );
 };
 
 void Interpreter::interpret_unit(struct rdesc_node &unit) {
@@ -212,19 +197,8 @@ void Interpreter::interpret_unit(struct rdesc_node &unit) {
     LutId lut_id = get_seminfo<IdentInfo>(nt.children[2])->id;
     LutId id = get_seminfo<IdentInfo>(nt.children[4])->id;
 
-    auto input_wires_ = get_rrr_seminfo<IdentInfo>(nt.children[7]);
-    auto output_wires_ = get_rrr_seminfo<IdentInfo>(nt.children[11]);
-
-    auto extract_wire_ids = [](const auto &info_list) {
-        vector<WireId> ids;
-        ids.reserve(info_list.size());
-        for (const auto &info : info_list)
-            ids.push_back(info->id);
-        return ids;
-    };  // GCOVR_EXCL_LINE
-
-    vector<WireId> input_wires = extract_wire_ids(input_wires_);
-    vector<WireId> output_wires = extract_wire_ids(output_wires_);
+    auto input_wires = get_rrr_ident_id(nt.children[7]);
+    auto output_wires = get_rrr_ident_id(nt.children[11]);
     /* end of serialization */
 
     auto validate_input_wires = [this](const auto &wire_ids) {
@@ -250,14 +224,16 @@ void Interpreter::interpret_unit(struct rdesc_node &unit) {
     for (auto input_wire : input_wires)
         wires.at(input_wire).affects.insert(id);
 
-    units.emplace(piecewise_construct,
-                  forward_as_tuple(id),
-                  forward_as_tuple(
-                      interpret_table(*nt.children[13]),
-                      id, lut_id,
-                      std::move(input_wires),
-                      std::move(output_wires)
-                  ));
+    units.emplace(
+        piecewise_construct,
+        forward_as_tuple(id),
+        forward_as_tuple(
+            interpret_table(*nt.children[13]),
+            id, lut_id,
+            std::move(input_wires),
+            std::move(output_wires)
+        )
+    );
 };
 
 enum rdesc_result Interpreter::pump(struct rdesc_cfg_token tk) {
@@ -299,90 +275,4 @@ enum rdesc_result Interpreter::pump(struct rdesc_cfg_token tk) {
     rdesc_node_destroy(cst, NULL);
     rdesc.start(START_SYM);
     return RDESC_READY;
-}
-ostream &operator<<(ostream &os, const Lut &lut) {
-    os << "lut<" << lut.input_size << ", " << lut.output_size << "> l"
-        << lut.id << " = (0b";
-
-    size_t input_variant_count = lut.input_variant_count();
-    for (size_t i = 0; i < lut.lut.size(); i++) {
-        if (i > 0 && i % input_variant_count == 0)
-            os << ", 0b";
-
-        os << lut.lut[
-            (i / input_variant_count + 1) * input_variant_count -
-            (i % input_variant_count) - 1
-            ];
-    }
-
-    os << ") " << lut.table << ";";
-
-    return os;
-}
-
-ostream &operator<<(ostream &os, const Wire &wire) {
-    os << "wire w" << wire.id << " = " << (wire.state ? "1 " : "0 ");
-
-    os << wire.table << ";";
-
-    return os;
-}
-
-ostream &operator<<(ostream &os, const Unit &unit) {
-    os << "unit<l" << unit.lut_id << "> u" << unit.id << " = (";
-
-    for (size_t i = 0; i < unit.input_wires.size(); i++) {
-        if (i > 0)
-            os << ", ";
-
-        os << "w" << unit.input_wires[i];
-    }
-
-    os << ") -> (";
-
-    for (size_t i = 0; i < unit.output_wires.size(); i++) {
-        if (i > 0)
-            os << ", ";
-
-        os << "w" << unit.output_wires[i];
-    }
-
-    os << ")" << unit.table << ";";
-
-    return os;
-}
-
-ostream &operator<<(ostream &os, const Table &table) {
-    if (table.table.size() == 0)
-        return os;
-
-    os << "\n{\n";
-
-    size_t i = 0;
-    for (const auto &entry : table.table) {
-        os << "    p" << entry.first << ": " << *entry.second;
-        os << (i == table.table.size() - 1 ? "\n" : ",\n");
-        i++;
-    }
-
-    os << "}";
-
-    return os;
-}
-
-ostream &operator<<(ostream &os, const Interpreter &intr) {
-    for (auto &it : intr.luts)
-        os << it.second << "\n";
-
-    os << "\n";
-
-    for (auto &it : intr.wires)
-        os << it.second << "\n";
-
-    os << "\n";
-
-    for (auto &it : intr.units)
-        os << it.second << "\n";
-
-    return os;
 }

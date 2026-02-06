@@ -8,8 +8,6 @@
 #define TABLE_HPP
 
 
-#include "lex.hpp"
-
 #include <map>
 #include <memory>
 #include <utility>
@@ -37,9 +35,9 @@ public:
     virtual ~TVNum() = default;
 
     std::ostream &print(std::ostream &os) const override
-        { os << numinfo->num; return os; }
+        { os << decimal; return os; }
 
-    std::unique_ptr<NumInfo> numinfo;
+    size_t decimal;
 };
 
 class TVPoint : public TableValue {
@@ -54,9 +52,9 @@ public:
     virtual ~TVPointIdent() = default;
 
     std::ostream &print(std::ostream &os) const override
-        { os << "i" << ident->id; return os; }
+        { os << "i" << id; return os; }
 
-    std::unique_ptr<IdentInfo> ident;
+    size_t id;
 };
 
 class TVPointNum : public TVPoint {
@@ -66,9 +64,10 @@ public:
     virtual ~TVPointNum() = default;
 
     std::ostream &print(std::ostream &os) const override
-        { os << "(" << num[0]->num << ", " << num[1]->num << ")"; return os; }
+        { os << "(" << x << ", " << y << ")"; return os; }
 
-    std::unique_ptr<NumInfo> num[2];
+    size_t x;
+    size_t y;
 };
 
 class TVPath : public TableValue {
@@ -78,26 +77,39 @@ public:
     virtual ~TVPath() = default;
 
     std::ostream &print(std::ostream &os) const override {
-        size_t i = 0;
-        for (auto &point_ : path) {
-            TableValue *point = point_.get();
-            os << *point;
+        os << "[";
 
-            if (i != path.size() - 1)
-                os << ", ";
+        size_t j = 0;
+        for (auto &path : paths) {
+            size_t i = 0;
+            for (auto &point_ : path) {
+                TableValue *point = point_.get();
+                os << *point;
 
-            i++;
+                if (i != path.size() - 1)
+                    os << ", ";
+
+                i++;
+            }
+
+            if (j != paths.size() - 1)
+                os << "; ";
+
+            j++;
         }
+
+        os << "]";
+
         return os;
     }
 
-    std::vector<std::unique_ptr<TVPoint>> path;
+    std::vector<std::vector<std::unique_ptr<TVPoint>>> paths;
 };
 
 
 class Table {
 public:
-    Table(auto table_)
+    Table(std::map<TableKeyId, std::unique_ptr<TableValue>>  table_)
         : table { std::move(table_) } {}
 
     Table(Table &&other)
