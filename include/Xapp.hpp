@@ -7,13 +7,13 @@
 #define XAPP_HPP
 
 #include "Xdraw.hpp"
+#include "interpreter.hpp"
 
 #include <X11/Xlib.h>
 
 #include <memory>
 #include <thread>
 
-class Interpreter /* defined in interpreter.hpp */;
 class Lex /* defined in lex.hpp */;
 
 
@@ -37,6 +37,11 @@ private:
     /** @brief The entry point for the thread. */
     void run();
 
+    void toggle_wire(int x, int y);
+
+    std::shared_ptr<Interpreter> intr_FOR_RC;
+    Simulation sim;
+
     std::shared_ptr<Display> dpy;
 
     Window win;
@@ -44,6 +49,8 @@ private:
     Draw draw;
 
     std::jthread evloop;
+
+    TableKeyId k_path;
 };
 
 /** @brief Main Application orchestrator and X11 resource manager. */
@@ -96,8 +103,10 @@ private:
 
 
 inline EvLoop::EvLoop(App *app)
-    : dpy { app->dpy }, win { app->win },
-      draw { dpy, app->scr, win, app->intr, app->lex } {}
+    : intr_FOR_RC { app->intr }, sim { *app->intr.get() },
+      dpy { app->dpy }, win { app->win },
+      draw { dpy, app->scr, win, app->intr, app->lex },
+      k_path { app->lex->get_ident_id("_path") } {}
 
 
 #endif

@@ -1,4 +1,6 @@
 #include "../include/Xapp.hpp"
+#include "../include/interpreter.hpp"
+#include "../include/table.hpp"
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -44,6 +46,28 @@ void App::init() {
 
 void EvLoop::start() {
     evloop = jthread(&EvLoop::run, this);
+}
+
+void EvLoop::toggle_wire(int x, int y) {
+    for (auto &wire : sim.wires) {
+        auto &path =
+            dynamic_cast<const TVPath &>(wire.second.table.get(k_path));
+
+        auto *tip_ = dynamic_cast<const TVPointNum *>(path.paths[0][0].get());
+
+        if (tip_ != nullptr) {
+            auto &tip = *tip_;
+
+            if (x - draw.scale <= draw.scale_x(tip.x) &&
+                draw.scale_x(tip.x) <= x + draw.scale &&
+                y - draw.scale <= draw.scale_y(tip.y) &&
+                draw.scale_y(tip.y) <= y + draw.scale
+            ) {
+                sim.set_wire_state(wire.first, !wire.second.state);
+                sim.stabilize();
+            }
+        }
+    }
 }
 
 void EvLoop::run() {
@@ -97,6 +121,10 @@ void EvLoop::run() {
             break;
 
         case ButtonPress:
+            if (ev.xbutton.button == 1) {
+                toggle_wire(ev.xbutton.x, ev.xbutton.y);
+                break;
+            }
             if (ctrl_hold) {
                 switch (ev.xbutton.button) {
                 case (4):

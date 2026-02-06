@@ -17,7 +17,7 @@ using std::cerr;
 using std::unique_ptr;
 
 
-#define p(x_, y_) offset_x + (x_) * scale, offset_y + (y_) * scale
+#define p(x_, y_) scale_x(x_), scale_y(y_)
 
 void Draw::redraw() const {
     XClearWindow(dpy.get(), win);

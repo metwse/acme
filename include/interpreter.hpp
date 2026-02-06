@@ -17,6 +17,7 @@
 #include <ostream>
 #include <set>
 
+class EvLoop /* defined in Xapp.hpp */;
 class Draw /* defined in Xdraw.hpp */;
 class Lex /* defined in lex.hpp */;
 
@@ -67,6 +68,8 @@ public:
     void stabilize();
 
 private:
+    friend EvLoop;
+
     const std::map<LutId, Lut> &luts;
     std::map<WireId, Wire> &wires;
     const std::map<UnitId, Unit> &units;

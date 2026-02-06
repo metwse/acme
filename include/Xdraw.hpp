@@ -46,6 +46,11 @@ public:
 
     void redraw() const;
 
+    int scale_x(double x) const
+        { return offset_x + x * scale; }
+    int scale_y(double y) const
+        { return offset_y + y * scale; }
+
     int offset_x {};
     int offset_y {};
     double scale { 10 };
