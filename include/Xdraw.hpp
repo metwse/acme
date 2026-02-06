@@ -46,8 +46,8 @@ public:
 
     void redraw() const;
 
-    int offset_x { 100};
-    int offset_y { 100 };
+    int offset_x {};
+    int offset_y {};
     double scale { 10 };
 
 private:

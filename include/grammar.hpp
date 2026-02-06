@@ -126,9 +126,9 @@ const struct rdesc_cfg_symbol
 grammar[NT_COUNT][NT_VARIANT_COUNT][NT_BODY_LENGTH] = {
     /* <stmt> ::= */ r(
         TK(SEMI),
-        alt	NT(LUT), TK(SEMI),
-        alt	NT(WIRE), TK(SEMI),
-        alt	NT(UNIT), TK(SEMI),
+    alt NT(LUT), TK(SEMI),
+    alt NT(WIRE), TK(SEMI),
+    alt NT(UNIT), TK(SEMI),
     ),
 
     /* <lut> ::= */ r(
