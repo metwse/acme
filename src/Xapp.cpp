@@ -1,5 +1,4 @@
 #include "../include/Xapp.hpp"
-#include "detail.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -70,7 +69,8 @@ void EvLoop::run() {
                     quit = true;
                 break;
 
-            default: unreachable();  // GCOVR_EXCL_LINE
+            default:
+                break;// GCOVR_EXCL_LINE
         }
     }
 }

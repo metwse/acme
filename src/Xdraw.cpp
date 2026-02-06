@@ -2,13 +2,19 @@
 #include "../include/interpreter.hpp"
 #include "../include/core.hpp"
 
+#include <X11/X.h>
 #include <X11/Xlib.h>
 
+#include <iostream>
 #include <memory>
+#include <stdexcept>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
 using std::vector;
+using std::cerr;
+using std::unique_ptr;
 
 
 #define p(x_, y_) offset_x + (x_) * scale, offset_y + (y_) * scale
@@ -16,11 +22,36 @@ using std::vector;
 void Draw::redraw() const {
     XClearWindow(dpy.get(), win);
 
-    for (const auto &wire : intr->wires)
-        draw(wire.second);
+    XSetLineAttributes(dpy.get(), gc, (scale + 4) / 4, LineSolid, CapRound, JoinRound);
 
-    for (const auto &unit : intr->units)
-        draw(unit.second);
+    for (const auto &wire : intr->wires) {
+        XSetForeground(dpy.get(), gc,
+                       wire.second.state ? active_color.pixel : inactive_color.pixel);
+
+        try {
+            draw(wire.second);
+        } catch (std::bad_cast &) {
+            cerr << "Warning: Skipping wire " << lex->ident_name(wire.second.id)
+                << " has invalid metadata type.\n";
+        } catch (std::out_of_range &) {
+            cerr << "Warning: Skipping wire " << lex->ident_name(wire.second.id)
+                << " missing required metadata.\n";
+        }
+    }
+
+    for (const auto &unit : intr->units) {
+        XSetForeground(dpy.get(), gc, inactive_color.pixel);
+
+        try {
+            draw(unit.second);
+        } catch (std::bad_cast &) {
+            cerr << "Warning: Skipping unit " << lex->ident_name(unit.second.id)
+                << " has invalid metadata type.\n";
+        } catch (std::out_of_range &) {
+            cerr << "Warning: Skipping unit " << lex->ident_name(unit.second.id)
+                << " missing required metadata.\n";
+        }
+    }
 
     XFlush(dpy.get());
 }
@@ -31,10 +62,10 @@ void Draw::draw(const Lut &lut, int x, int y) const {
     for (auto &path : shape.paths) {
         vector<XPoint> points;
 
-        for (auto &point_ : path) {
-            auto &point = dynamic_cast<const TVPointNum &>(*point_.get());
+        for (auto &point : path) {
+            auto &num_point = dynamic_cast<const TVPointNum &>(*point.get());
 
-            points.push_back(XPoint(p(x + point.x, y + point.y)));
+            points.push_back(XPoint(p(x + num_point.x, y + num_point.y)));
         }
 
         XDrawLines(dpy.get(), win, gc,
@@ -42,51 +73,64 @@ void Draw::draw(const Lut &lut, int x, int y) const {
     }
 }
 
-void Draw::draw(const Wire &wire) const {
-    auto &path = dynamic_cast<const TVPath &>(wire.table.get(k_path));
+void Draw::draw(const Wire &wire,
+                const vector<unique_ptr<TVPoint>> &path) const {
     vector<XPoint> points;
 
-    for (auto &point : path.paths.at(0)) {
-        auto ident_point_ = dynamic_cast<const TVPointIdent *>(point.get());
+    size_t i = 0;
+    for (auto &point : path) {
+        auto ident_point_ptr = dynamic_cast<const TVPointIdent *>(point.get());
 
-        if (ident_point_ != nullptr) {
-            auto ident_point = &*ident_point_;
+        if (ident_point_ptr != nullptr) {
+            /* automatically connect wire to unit's port if an ident present
+             * in path*/
+            auto ident_point = &*ident_point_ptr;
 
+            /* unit wire connected to and its lut */
             auto &unit = intr->units.at(ident_point->id);
             auto &lut = intr->luts.at(unit.lut_id);
 
-            auto &pos = dynamic_cast<const TVPointNum &>(unit.table.get(k_pos));
+            auto &unit_pos = dynamic_cast<const TVPointNum &>(unit.table.get(k_pos));
 
-            for (size_t i = 0; i < unit.input_wires.size(); i++) {
-                if (unit.input_wires[i] == wire.id) {
-                    auto &num_point = dynamic_cast<const TVPointNum &>(
-                        *dynamic_cast<const TVPath &>(
-                            lut.table.get(k_input)).paths[0][i].get());
+            auto get_port_position = [&](TableKeyId key, auto port_index) {
+                auto &port_path = dynamic_cast<const TVPath &>(lut.table.get(key));
+                auto &point = *port_path.paths[0][port_index].get();
+                auto &num_point = dynamic_cast<const TVPointNum &>(point);
+                points.push_back(XPoint(p(num_point.x + unit_pos.x,
+                                          num_point.y + unit_pos.y)));
+            };
 
-                    points.push_back(XPoint(p(num_point.x + pos.x, num_point.y + pos.y)));
-                    break;
-                }
-            }
+            for (size_t i = 0; i < unit.input_wires.size(); i++)
+                if (unit.input_wires[i] == wire.id)
+                    get_port_position(k_input, i);
 
-            for (size_t i = 0; i < unit.output_wires.size(); i++) {
-                if (unit.output_wires[i] == wire.id) {
-                    auto &num_point = dynamic_cast<const TVPointNum &>(
-                        *dynamic_cast<const TVPath &>(
-                            lut.table.get(k_output)).paths[0][i].get());
-
-                    points.push_back(XPoint(p(num_point.x + pos.x, num_point.y + pos.y)));
-                    break;
-                }
-            }
+            for (size_t i = 0; i < unit.output_wires.size(); i++)
+                if (unit.output_wires[i] == wire.id)
+                    get_port_position(k_output, i);
         } else {
+            /* add point otherwise */
             auto &num_point = dynamic_cast<const TVPointNum &>(*point.get());
 
             points.push_back(XPoint(p(num_point.x, num_point.y)));
+
+            if (i == 0 || i == path.size() - 1) {
+                XFillArc(dpy.get(), win, gc,
+                         p(num_point.x - 0.5, num_point.y - 0.5),
+                         scale, scale, 0, 360 * 64);
+            }
         }
+
+        i++;
     }
 
-    XDrawLines(dpy.get(), win, gc,
-               &points[0], points.size(), CoordModeOrigin);
+    XDrawLines(dpy.get(), win, gc, &points[0], points.size(), CoordModeOrigin);
+}
+
+void Draw::draw(const Wire &wire) const {
+    auto &paths = dynamic_cast<const TVPath &>(wire.table.get(k_path));
+
+    for (auto &path : paths.paths)
+        draw(wire, path);
 }
 
 void Draw::draw(const Unit &unit) const {
@@ -95,7 +139,6 @@ void Draw::draw(const Unit &unit) const {
     draw(intr->luts.at(unit.lut_id),
          static_cast<int>(pos.x), static_cast<int>(pos.y));
 }
-
 
 void Draw::init_key_ids() {
     k_shape = lex->get_ident_id("_shape");

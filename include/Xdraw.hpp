@@ -9,10 +9,10 @@
 
 #include "table.hpp"
 
+#include <X11/X.h>
 #include <X11/Xlib.h>
 
 #include <memory>
-#include <utility>
 
 class EvLoop /* defined in Xapp.hpp */;
 class Interpreter /* defined in interpreter.hpp */;
@@ -29,8 +29,16 @@ public:
     Draw(auto dpy_, auto scr_, auto win_, auto intr_, auto lex_)
         : dpy { dpy_ }, scr { scr_ }, win { win_ },
           gc { XDefaultGCOfScreen(scr) },
-          intr { intr_ }, lex { lex_ }
-        { init_key_ids(); }
+          intr { intr_ }, lex { lex_ } {
+        Colormap cmap = XDefaultColormapOfScreen(scr);
+
+        XParseColor(dpy.get(), cmap, "green", &active_color);
+        XAllocColor(dpy.get(), cmap, &active_color);
+        XParseColor(dpy.get(), cmap, "black", &inactive_color);
+        XAllocColor(dpy.get(), cmap, &inactive_color);
+
+        init_key_ids();
+    }
 
     void draw(const Lut &, int x, int y) const;
     void draw(const Wire &) const;
@@ -44,6 +52,9 @@ public:
 
 private:
     void init_key_ids();
+
+    /* helper function to draw one path in a wire */
+    void draw(const Wire &, const std::vector<std::unique_ptr<TVPoint>> &) const;
 
     std::shared_ptr<Display> dpy;
 
@@ -61,6 +72,9 @@ private:
     TableKeyId k_output;
     TableKeyId k_path;
     TableKeyId k_pos;
+
+    XColor active_color;
+    XColor inactive_color;
 };
 
 
