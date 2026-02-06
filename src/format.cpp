@@ -1,4 +1,5 @@
 #include "../include/core.hpp"
+#include "../include/interpreter.hpp"
 
 #include <ostream>
 #include <cstddef>

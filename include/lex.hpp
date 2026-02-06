@@ -21,11 +21,13 @@
 #include <vector>
 
 
+/** @brief Tokenizer */
 class Lex {
 public:
     Lex(std::istream &s_)
         : s { s_.rdbuf() } {}
 
+    /* SAFETY: `struct rdesc` cannot shared across lexers. */
     Lex(const Lex &other) = delete;
 
     ~Lex() = default;
@@ -56,11 +58,13 @@ private:
     size_t last_ident_id = 0;
 };
 
+/** @brief Semantic information base class. */
 class SemInfo {
 public:
     virtual ~SemInfo() = default;
 };
 
+/** @brief Semantic information for numeric types. */
 class NumInfo : public SemInfo {
 public:
     NumInfo(int base_, std::string num_)
@@ -75,6 +79,7 @@ public:
     std::string num;
 };
 
+/** @brief Semantic information for identifiers. */
 class IdentInfo : public SemInfo {
 public:
     IdentInfo(size_t id_)

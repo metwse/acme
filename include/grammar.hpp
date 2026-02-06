@@ -3,7 +3,6 @@
  * @brief HDL grammar definition.
  */
 
-#pragma once
 #ifndef GRAMMAR_HPP
 #define GRAMMAR_HPP
 

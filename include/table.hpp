@@ -17,7 +17,7 @@
 
 typedef size_t TableKeyId;
 
-
+/** @brief Semantic information for table value. */
 class TableValue {
 public:
     virtual ~TableValue() = default;
@@ -28,6 +28,7 @@ public:
         { return tv.print(stream); }
 };
 
+/** @brief Decimal table value. */
 class TVNum : public TableValue {
 public:
     TVNum(struct rdesc_node &);
@@ -40,11 +41,16 @@ public:
     size_t decimal;
 };
 
+/**
+ * @brief Point semantic information, which can either be a position of an unit
+ * (ident) or (x, y).
+ */
 class TVPoint : public TableValue {
 public:
     virtual ~TVPoint() = default;
 };
 
+/** @brief Position aliasing a port of an unit. */
 class TVPointIdent : public TVPoint {
 public:
     TVPointIdent(struct rdesc_node &);
@@ -57,6 +63,7 @@ public:
     size_t id;
 };
 
+/** @brief Numeric position. */
 class TVPointNum : public TVPoint {
 public:
     TVPointNum(struct rdesc_node &);
@@ -70,6 +77,7 @@ public:
     size_t y;
 };
 
+/** @brief Path of an wire or shape of a lookup table. */
 class TVPath : public TableValue {
 public:
     TVPath(struct rdesc_node &);
@@ -106,7 +114,7 @@ public:
     std::vector<std::vector<std::unique_ptr<TVPoint>>> paths;
 };
 
-
+/** @brief Extra information table for statements. */
 class Table {
 public:
     Table(std::map<TableKeyId, std::unique_ptr<TableValue>>  table_)

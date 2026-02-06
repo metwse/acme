@@ -1,4 +1,4 @@
-#include "../include/core.hpp"
+#include "../include/interpreter.hpp"
 #include "../include/grammar.hpp"
 #include "../include/lex.hpp"
 #include "../include/table.hpp"

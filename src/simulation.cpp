@@ -1,3 +1,4 @@
+#include "../include/interpreter.hpp"
 #include "../include/core.hpp"
 
 #include <set>

@@ -1,6 +1,6 @@
 /**
  * @file core.hpp
- * @brief Core simulation engine.
+ * @brief Core simulation elements.
  */
 
 #ifndef CORE_HPP
@@ -8,23 +8,24 @@
 
 
 #include "table.hpp"
-#include "rdesc.hpp"
 
 #include <rdesc/cfg.h>
 #include <rdesc/rdesc.h>
 
 #include <cstddef>
-#include <map>
 #include <set>
 #include <utility>
 #include <vector>
 
 
+/** @brief New-type pattern for lookup table identifiers. */
 typedef size_t LutId;
+/** @brief New-type pattern for unit identifiers. */
 typedef size_t UnitId;
+/** @brief New-type pattern for wire identifiers. */
 typedef size_t WireId;
 
-
+/** @brief Lookup table component. */
 class Lut {
 public:
     Lut(Table table, LutId id_, size_t input_size_, size_t output_size_,
@@ -50,6 +51,7 @@ private:
     std::vector<bool> lut;
 };
 
+/** @brief Wire representing pyhsical connections. */
 class Wire {
 public:
     Wire(Table table, WireId id_, bool state_)
@@ -67,6 +69,7 @@ private:
     friend std::ostream &operator<<(std::ostream &, const Wire &);
 };
 
+/** @brief Pyhsical logic elements in the simulation. */
 class Unit {
 public:
     Unit(Table table, UnitId id_, LutId lut_id_,
@@ -87,55 +90,6 @@ public:
 
 private:
     friend std::ostream &operator<<(std::ostream &, const Unit &);
-};
-
-class Simulation;
-
-class Interpreter {
-public:
-    Interpreter(Rdesc &&rdesc_)
-        : rdesc { std::move(rdesc_) }
-        { rdesc.start(START_SYM); };
-
-    enum rdesc_result pump(struct rdesc_cfg_token tk);
-
-    void interpret_lut(struct rdesc_node &);
-    void interpret_wire(struct rdesc_node &);
-    void interpret_unit(struct rdesc_node &);
-
-    Table interpret_table(struct rdesc_node &);
-    std::unique_ptr<TableValue> interpret_table_value(struct rdesc_node &);
-
-private:
-    friend std::ostream &operator<<(std::ostream &, const Interpreter &);
-    friend Simulation;
-
-    std::map<LutId, Lut> luts;
-    std::map<WireId, Wire> wires;
-    std::map<UnitId, Unit> units;
-
-    static const enum nt START_SYM = NT_STMT;
-
-    Rdesc rdesc;
-};
-
-class Simulation {
-public:
-    Simulation(Interpreter &intr)
-        : luts { intr.luts }, wires { intr.wires }, units { intr.units } {}
-
-    void set_wire_state(WireId id, bool state);
-
-    void advance();
-
-    void stabilize();
-
-private:
-    const std::map<LutId, Lut> &luts;
-    std::map<WireId, Wire> &wires;
-    const std::map<UnitId, Unit> &units;
-
-    std::set<WireId> changed_wires;
 };
 
 

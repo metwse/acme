@@ -19,6 +19,7 @@
 
 class Rdesc;
 
+/** @brief `rdesc` context-free grammar. */
 class Cfg : public std::enable_shared_from_this<Cfg> {
 private:
     struct Token { explicit Token() = default; };
@@ -49,7 +50,7 @@ private:
     struct rdesc_cfg cfg;
 };
 
-
+/** @brief `struct rdesc` RAII control. */
 class Rdesc {
 public:
     Rdesc(std::shared_ptr<Cfg> cfg_)
