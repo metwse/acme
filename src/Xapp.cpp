@@ -42,19 +42,22 @@ void EvLoop::start() {
 }
 
 void EvLoop::run() {
-    Atom wm_delete_win = XInternAtom(app->dpy.get(), "WM_DELETE_WINDOW", False);
-    XSetWMProtocols(app->dpy.get(), app->win, &wm_delete_win, 1);
+    Atom wm_delete_win = XInternAtom(dpy.get(), "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(dpy.get(), win, &wm_delete_win, 1);
 
-    XSelectInput(app->dpy.get(), app->win, ExposureMask);
+    XSelectInput(dpy.get(), win, ExposureMask);
 
     XEvent ev;
     bool quit = false;
 
+    draw.redraw();
+
     while (!quit) {
-        XNextEvent(app->dpy.get(), &ev);
+        XNextEvent(dpy.get(), &ev);
 
         switch (ev.type) {
             case Expose:
+                draw.redraw();
                 break;
 
             case ClientMessage:
