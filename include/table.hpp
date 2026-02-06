@@ -16,6 +16,8 @@
 #include <vector>
 #include <ostream>
 
+class Draw /* defined in Xdraw.hpp */;
+
 
 typedef size_t TableKeyId;
 
@@ -126,7 +128,12 @@ public:
 
     std::ostream &dump(std::ostream &os, const Lex &lex) const;
 
+    const TableValue &get(TableKeyId k) const
+        { return static_cast<const TableValue &>(*table.at(k).get()); }
+
 private:
+    friend Draw;
+
     std::map<TableKeyId, std::unique_ptr<TableValue>> table;
 };
 

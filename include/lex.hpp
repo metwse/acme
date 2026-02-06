@@ -36,11 +36,11 @@ public:
 
     const std::string &ident_name(size_t i) const;
 
+    size_t get_ident_id(const std::string &);
+
 private:
     template<typename T>
     friend void operator<<(Lex &lex, T i);
-
-    size_t get_ident_id(const std::string &);
 
     char skip_space();
 

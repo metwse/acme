@@ -17,7 +17,8 @@
 #include <ostream>
 #include <set>
 
-class Lex;
+class Draw /* defined in Xdraw.hpp */;
+class Lex /* defined in lex.hpp */;
 
 
 class Simulation;
@@ -42,6 +43,7 @@ public:
 
 private:
     friend Simulation;
+    friend Draw;
 
     std::map<LutId, Lut> luts;
     std::map<WireId, Wire> wires;

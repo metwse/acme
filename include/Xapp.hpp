@@ -33,7 +33,6 @@ public:
     /** @brief Spawns the worker thread and begins execution. */
     void start();
 
-
 private:
     /** @brief The entry point for the thread. */
     void run();
