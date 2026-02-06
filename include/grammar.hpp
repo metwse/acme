@@ -117,9 +117,9 @@ const char *const nt_names[NT_COUNT] = {
     "table", "opttable",
     "table_entry", "table_entry_ls", "table_entry_ls_rest",
 
-    "nt_table_value",
-    "nt_tv_point", "nt_tv_point_ls", "nt_tv_point_ls_rest",
-    "nt_tv_point_ls_delim", "nt_tv_path",
+    "table_value",
+    "tv_point", "tv_point_ls", "tv_point_ls_rest",
+    "tv_point_ls_delim", "tv_path",
 };
 
 /** @brief Context-free grammar. */

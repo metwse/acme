@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
 
@@ -24,11 +25,11 @@ typedef size_t UnitId;
 typedef size_t WireId;
 
 
-class Lut : public Table {
+class Lut {
 public:
-    Lut(auto table, LutId id_, size_t input_size_, size_t output_size_,
+    Lut(Table table, LutId id_, size_t input_size_, size_t output_size_,
         std::vector<bool> &&lut_)
-        : Table { table },
+        : table { std::move(table) },
           id { id_ }, input_size { input_size_ }, output_size { output_size_ },
           lut { std::move(lut_) } {}
 
@@ -36,6 +37,8 @@ public:
 
     size_t input_variant_count() const
         { return (1 << input_size); }
+
+    const Table table;
 
     const LutId id;
     const size_t input_size;
@@ -47,12 +50,15 @@ private:
     std::vector<bool> lut;
 };
 
-class Wire : public Table {
+class Wire {
 public:
-    Wire(auto table, WireId id_, bool state_)
-        : Table { table },
+    Wire(Table table, WireId id_, bool state_)
+        : table { std::move(table) },
           id { id_ }, state { state_ } {}
-    WireId id;
+
+    const Table table;
+
+    const WireId id;
     bool state;
 
     std::set<UnitId> affects {};
@@ -61,15 +67,17 @@ private:
     friend std::ostream &operator<<(std::ostream &, const Wire &);
 };
 
-class Unit : public Table {
+class Unit {
 public:
-    Unit(auto table, UnitId id_, LutId lut_id_,
+    Unit(Table table, UnitId id_, LutId lut_id_,
          std::vector<WireId> &&input_wires_,
          std::vector<WireId> &&output_wires_)
-        : Table { table },
+        : table { std::move(table) },
           id { id_ }, lut_id { lut_id_ },
           input_wires { std::move(input_wires_) },
           output_wires { std::move(output_wires_) } {}
+
+    const Table table;
 
     const UnitId id;
     const LutId lut_id;
@@ -94,6 +102,9 @@ public:
     void interpret_lut(struct rdesc_node &);
     void interpret_wire(struct rdesc_node &);
     void interpret_unit(struct rdesc_node &);
+
+    Table interpret_table(struct rdesc_node &);
+    std::unique_ptr<TableValue> interpret_table_value(struct rdesc_node &);
 
 private:
     friend std::ostream &operator<<(std::ostream &, const Interpreter &);
