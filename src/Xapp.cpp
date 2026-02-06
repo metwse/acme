@@ -6,9 +6,12 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+#include <exception>
+#include <iostream>
 #include <thread>
 
 using std::jthread;
+using std::cerr;
 
 
 Window create_window(App *app) {
@@ -50,22 +53,26 @@ void EvLoop::start() {
 
 void EvLoop::toggle_wire(int x, int y) {
     for (auto &wire : sim.wires) {
-        auto &path =
-            dynamic_cast<const TVPath &>(wire.second.table.get(k_path));
+        try {
+            auto &path =
+                dynamic_cast<const TVPath &>(wire.second.table.get(k_path));
 
-        auto *tip_ = dynamic_cast<const TVPointNum *>(path.paths[0][0].get());
+            auto *tip_ = dynamic_cast<const TVPointNum *>(path.paths[0][0].get());
 
-        if (tip_ != nullptr) {
-            auto &tip = *tip_;
+            if (tip_ != nullptr) {
+                auto &tip = *tip_;
 
-            if (x - draw.scale <= draw.scale_x(tip.x) &&
-                draw.scale_x(tip.x) <= x + draw.scale &&
-                y - draw.scale <= draw.scale_y(tip.y) &&
-                draw.scale_y(tip.y) <= y + draw.scale
-            ) {
-                sim.set_wire_state(wire.first, !wire.second.state);
-                sim.stabilize();
+                if (x - draw.scale <= draw.scale_x(tip.x) &&
+                    draw.scale_x(tip.x) <= x + draw.scale &&
+                    y - draw.scale <= draw.scale_y(tip.y) &&
+                    draw.scale_y(tip.y) <= y + draw.scale
+                ) {
+                    sim.set_wire_state(wire.first, !wire.second.state);
+                    sim.stabilize();
+                }
             }
+        } catch (std::exception &) {
+            cerr << "Could not toggle wire!\n";
         }
     }
 }
