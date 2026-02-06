@@ -19,6 +19,8 @@ class Lex /* defined in lex.hpp */;
 
 class App;
 
+Window create_window(App *app);
+
 /** @brief Manages the dedicated event processing thread. */
 class EvLoop {
 public:
@@ -64,6 +66,7 @@ public:
                                        App::DisplayDeleter {}) },
         scr { XDefaultScreenOfDisplay(dpy.get()) },
         root { XRootWindowOfScreen(scr) },
+        win { create_window(this) },
         evloop { this } {}
 
     /** @brief Default destructor relies on RAII for member cleanup. */
@@ -73,6 +76,7 @@ public:
     void init();
 
 private:
+    friend Window create_window(App *app);
     friend EvLoop;
     friend Draw;
 

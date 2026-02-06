@@ -18,7 +18,10 @@ class Lex /* defined in lex.hpp */;
 /** @brief Draws the simulatoin into X graphics context */
 class Draw {
 public:
-    Draw(auto dpy_, auto scr_, auto win_, auto intr_, auto lex_);
+    Draw(auto dpy_, auto scr_, auto win_, auto intr_, auto lex_)
+        : dpy { dpy_ }, scr { scr_ }, win { win_ },
+          gc { XDefaultGCOfScreen(scr) },
+          intr { intr_ }, lex { lex_ } {}
 
     void redraw() const;
 

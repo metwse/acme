@@ -9,16 +9,21 @@
 using std::jthread;
 
 
+Window create_window(App *app) {
+    Colormap border_color = XBlackPixelOfScreen(app->scr);
+    Colormap background_color = XWhitePixelOfScreen(app->scr);
+
+    int x = XWidthOfScreen(app->scr) / 2 - app->WIDTH / 2;
+    int y = XHeightOfScreen(app->scr) / 2 - app->HEIGHT / 2;
+
+    return XCreateSimpleWindow(app->dpy.get(), app->root, x, y,
+                               app->WIDTH, app->HEIGHT, 1,
+                               border_color, background_color);
+
+}
+
+
 void App::init() {
-    Colormap border_color = XBlackPixelOfScreen(scr);
-    Colormap background_color = XWhitePixelOfScreen(scr);
-
-    int x = XWidthOfScreen(scr) / 2 - WIDTH / 2;
-    int y = XHeightOfScreen(scr) / 2 - HEIGHT / 2;
-
-    win = XCreateSimpleWindow(dpy.get(), root, x, y, WIDTH, HEIGHT, 1,
-                              border_color, background_color);
-
     XSizeHints size_hints;
     size_hints.flags = PMinSize;
     size_hints.min_width = WIDTH;
