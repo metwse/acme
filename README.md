@@ -14,8 +14,8 @@ building in debug mode.
 
 ### Requirements
 - `libx11`, `libx11-dev`
-- `libresc` with `stack`, `dump_dot`, and `dump_bnf` features (check out its
-  [repo](https://github.com/metwse/rdesc) for building documentation)
+- [`librdesc`](https://github.com/metwse/rdesc) with `stack`, `dump_dot`, and
+  `dump_bnf` features (Makefile automatically installs)
 
 ## Syntax Overview
 ```rs
