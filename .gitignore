@@ -1,4 +1,1 @@
-compile_commands.json
-target/
-docs/
-.cache/
+__pycache__/

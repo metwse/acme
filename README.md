@@ -1,38 +1,96 @@
-# acme
-Logic circuits simulation.
+# acme - Digital Circuit Simulator
 
-## `contribute -Wai-slop`
-<img width="96" height="96" alt="no-ai-slop" align="right" src="https://github.com/user-attachments/assets/bca16d5a-a6fe-4cbf-b41f-1176e000cff2" />
+A digital logic circuits simulation tool with a PyQt-based graphical interface.
 
-Contributions are welcome! Please check our
-[Code of Conduct](http://github.com/metwse/code-of-conduct) before submitting
-pull requests.
+## Features
 
-## Building
-Use `make` for building. You can set `DEBUG` environment variable to 1 for
-building in debug mode.
+- **HDL Parser**: Parse custom hardware description language files
+- **Circuit Simulation**: Real-time logic propagation with LUT-based components
+- **Interactive GUI**: Click to toggle wire states, zoom and pan the view
+- **Visualization**: Dynamic display of wires (green=active, black=inactive) and logic gates
+
+## Installation
 
 ### Requirements
-- `libx11`, `libx11-dev`
-- [`librdesc`](https://github.com/metwse/rdesc) with `stack`, `dump_dot`, and
-  `dump_bnf` features (Makefile automatically installs)
+- Python 3.10+
+- PyQt6
 
-## Syntax Overview
-```rs
-lut<2, 1> nand = (0b0111)
-{
-    prop_delay: 1, /* not implemented */
-    _shape: [(0, 0), (3, 0), (4, 1)...],
-    _input: [(0, 2), (0, 4)],
-    _output: [(5, 3)]
-}; /* properties starting with '_' are metadata fields and ignored by the
-      simulation engine */
-
-
-wire a = 1 { _path: [(5, 12), uut1] }; /* wires require initial state */
-wire b = 0 { _path: [(5, 14), uut1] };
-wire c = 1 { _path: [uut1, (10, 13)] };
-
-
-unit<nand> uut1 = (a, b) -> (c) { _pos: (10, 10) };
+### Install dependencies
+```bash
+pip install -r pyqt_frontend/requirements.txt
 ```
+
+## Usage
+
+```bash
+python -m pyqt_frontend <simulation_file>
+```
+
+### Example
+```bash
+python -m pyqt_frontend examples/gates.hdl
+```
+
+## Controls
+
+| Action | Control |
+|--------|---------|
+| Toggle wire state | Click on wire endpoint (circle) |
+| Zoom in/out | Ctrl + scroll wheel |
+| Pan view | Scroll wheel |
+| Reset zoom | Press `0` |
+
+## HDL Syntax
+
+### Lookup Tables (LUTs)
+```
+lut<inputs, outputs> name = (truth_table) {
+    _shape: [(x1, y1), (x2, y2), ...],
+    _input: [(x, y), ...],
+    _output: [(x, y), ...]
+};
+```
+
+### Wires
+```
+wire name = initial_state { _path: [(x1, y1), unit_name, ...] };
+```
+
+### Units
+```
+unit<lut_name> name = (input_wires) -> (output_wires) { _pos: (x, y) };
+```
+
+### Example Circuit (AND gate with NOT and OR)
+```
+lut<2, 1> and2 = (0b1000) {
+    _shape: [(0, 0), (6, 0), (8, 1), (9, 2), (10, 4), (10, 6), (9, 8),
+             (8, 9), (6, 10), (0, 10), (0, 0)],
+    _input: [(0, 2), (0, 8)],
+    _output: [(10, 5)]
+};
+
+wire a = 1 { _path: [(2, 5), (2, 7), uut1] };
+wire b = 0 { _path: [(2, 15), (2, 13), uut1] };
+wire c = 0 { _path: [uut1, (20, 10)] };
+
+unit<and2> uut1 = (a, b) -> (c) { _pos: (5, 5) };
+```
+
+## Project Structure
+
+```
+pyqt_frontend/
+├── __init__.py      # Package initialization
+├── __main__.py      # Entry point
+├── lexer.py         # HDL tokenizer
+├── parser.py        # HDL parser (builds circuit structures)
+├── simulation.py    # Logic simulation engine
+├── renderer.py      # PyQt canvas and drawing
+├── main_window.py   # Application main window
+└── requirements.txt # Python dependencies
+```
+
+## License
+
+See [LICENSE](LICENSE) file.
