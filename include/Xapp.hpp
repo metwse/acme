@@ -7,6 +7,7 @@
 #define XAPP_HPP
 
 #include "Xdraw.hpp"
+#include "Xeditor.hpp"
 #include "interpreter.hpp"
 
 #include <X11/Xlib.h>
@@ -38,6 +39,7 @@ private:
     void run();
 
     void toggle_wire(int x, int y);
+    void reload_circuit();
 
     std::shared_ptr<Interpreter> intr_FOR_RC;
     Simulation sim;
@@ -47,6 +49,8 @@ private:
     Window win;
 
     Draw draw;
+    Editor *editor;
+    bool editor_mode = false;
 
     std::jthread evloop;
 
@@ -66,8 +70,10 @@ private:
     };
 
 public:
-    App(auto intr_, auto lex_) :
+    App(auto intr_, auto lex_, std::string file_content_, std::string file_path_) :
         intr { intr_ }, lex { lex_ },
+        file_content { std::move(file_content_) },
+        file_path { std::move(file_path_) },
         dpy { std::shared_ptr<Display>(XOpenDisplay(NULL),
                                        App::DisplayDeleter {}) },
         scr { XDefaultScreenOfDisplay(dpy.get()) },
@@ -89,6 +95,9 @@ private:
     std::shared_ptr<Interpreter> intr;
     std::shared_ptr<Lex> lex;
 
+    std::string file_content;
+    std::string file_path;
+
     std::shared_ptr<Display> dpy;
 
     Screen *scr;
@@ -106,6 +115,7 @@ inline EvLoop::EvLoop(App *app)
     : intr_FOR_RC { app->intr }, sim { *app->intr.get() },
       dpy { app->dpy }, win { app->win },
       draw { dpy, app->scr, win, app->intr, app->lex },
+      editor { new Editor(dpy, app->scr, win, app->file_content, app->file_path) },
       k_path { app->lex->get_ident_id("_path") } {}
 
 

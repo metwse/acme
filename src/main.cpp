@@ -30,6 +30,12 @@ int main(int argc, char *argv[]) {
 
     ifstream file(argv[1], ios_base::in);
 
+    /* read entire file content for editor */
+    string file_content((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+    file.clear();
+    file.seekg(0, ios_base::beg);
+
     auto lex = make_shared<Lex>(file);
     auto intr = make_shared<Interpreter>(global_cfg()->new_parser());
 
@@ -54,7 +60,7 @@ int main(int argc, char *argv[]) {
     };
 
     XInitThreads();
-    App app { intr, lex };
+    App app { intr, lex, file_content, string(argv[1]) };
 
     app.init();
 

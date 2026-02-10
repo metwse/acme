@@ -1,5 +1,8 @@
 #include "../include/Xapp.hpp"
+#include "../include/Xeditor.hpp"
 #include "../include/interpreter.hpp"
+#include "../include/lex.hpp"
+#include "../include/grammar.hpp"
 #include "../include/table.hpp"
 
 #include <X11/X.h>
@@ -7,7 +10,9 @@
 #include <X11/Xutil.h>
 
 #include <exception>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 using std::jthread;
@@ -83,7 +88,8 @@ void EvLoop::run() {
 
     XSelectInput(dpy.get(), win,
                  ExposureMask | ButtonPressMask |
-                 KeyPressMask | KeyReleaseMask);
+                 KeyPressMask | KeyReleaseMask |
+                 StructureNotifyMask);
 
     XEvent ev;
     bool quit = false;
@@ -98,11 +104,36 @@ void EvLoop::run() {
         case Expose:
             break;
 
+        case ConfigureNotify:
+            editor->set_viewport(ev.xconfigure.width, ev.xconfigure.height);
+            break;
+
         case KeyPress:
+            if (editor_mode) {
+                /* check for Tab to exit editor mode */
+                {
+                    KeySym ksym = XLookupKeysym(&ev.xkey, 0);
+                    if (ksym == XK_Tab) {
+                        editor_mode = false;
+                        break;
+                    }
+                }
+                bool save_requested = editor->handle_key(ev.xkey);
+                if (save_requested) {
+                    if (editor->save()) {
+                        reload_circuit();
+                    }
+                }
+                break;
+            }
+
             switch (ev.xkey.keycode) {
             case 37: // CTRL_L
             case 105: // CTRL_R
                 ctrl_hold = true;
+                break;
+            case 23: // Tab
+                editor_mode = true;
                 break;
             case 19: // 0
                 draw.offset_x -= ev.xkey.x;
@@ -128,6 +159,11 @@ void EvLoop::run() {
             break;
 
         case ButtonPress:
+            if (editor_mode) {
+                editor->handle_button(ev.xbutton);
+                break;
+            }
+
             if (ev.xbutton.button == 1) {
                 toggle_wire(ev.xbutton.x, ev.xbutton.y);
                 break;
@@ -183,6 +219,50 @@ void EvLoop::run() {
         default: break;  // GCOVR_EXCL_LINE
         }
 
-        draw.redraw();
+        if (editor_mode)
+            editor->draw();
+        else
+            draw.redraw();
+    }
+}
+
+void EvLoop::reload_circuit() {
+    std::string text = editor->content();
+    std::istringstream file_stream(text);
+
+    auto lex = std::make_shared<Lex>(file_stream);
+    auto new_intr = std::make_shared<Interpreter>(global_cfg()->new_parser());
+
+    enum rdesc_result res;
+    bool success = true;
+    while (true) {
+        auto tk = lex->next();
+
+        if (tk.id == TK_NOTOKEN) {
+            cerr << "Editor reload: syntax error\n";
+            success = false;
+            break;
+        } else if (tk.id == TK_EOF) {
+            break;
+        }
+
+        res = new_intr->pump(tk);
+        if (res == RDESC_NOMATCH) {
+            cerr << "Editor reload: syntax error in statement\n";
+            success = false;
+            break;
+        }
+    }
+
+    if (success) {
+        /* swap interpreter and rebuild simulation */
+        intr_FOR_RC = new_intr;
+        draw.intr = new_intr;
+        draw.lex = lex;
+        draw.init_key_ids();
+        sim.~Simulation();
+        new (&sim) Simulation(*new_intr.get());
+        k_path = lex->get_ident_id("_path");
+        cerr << "Editor reload: success\n";
     }
 }

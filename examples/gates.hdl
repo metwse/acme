@@ -25,9 +25,10 @@ lut<1, 1> not1 = (0b01)
 wire a = 1 { _path: [(2, 5), (2, 7), uut1] };
 wire b = 0 { _path: [(2, 15), (2, 13), uut1] };
 wire c = 0 { _path: [uut1, uut2; (20, 10), (20, 16), uut3] };
-wire d = 1 { _path: [uut2, uut3] };
+wire d = 1 { _path: [uut2, (50, 0)] };
 wire e = 1 { _path: [uut3, (55, 13)] };
+wire f = 0 { _path: [(0, 0), uut3] };
 
 unit<and2> uut1 = (a, b) -> (c) { _pos: (5, 5) };
 unit<not1> uut2 = (c) -> (d) { _pos: (24, 6) };
-unit<or2> uut3 = (d, c) -> (e) { _pos: (40, 8) };
+unit<or2> uut3 = (f, c) -> (e) { _pos: (40, 8) };

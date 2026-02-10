@@ -56,6 +56,8 @@ public:
     double scale { 10 };
 
 private:
+    friend EvLoop;
+
     void init_key_ids();
 
     /* helper function to draw one path in a wire */
